@@ -1,159 +1,226 @@
-# Turborepo starter
+# 🛍️ Full-Stack E-Commerce Monorepo
 
-This Turborepo starter is maintained by the Turborepo core team.
+Welcome to the **E-Commerce Monorepo**, an industry-grade, highly performant full-stack e-commerce platform. This project is structured as a **Turborepo** monorepo, designed for optimal development speed, pipeline caching, code sharing, and clean architecture boundaries.
 
-## Using this example
+---
 
-Run the following command:
+## 🏗️ Repository Architecture
 
-```sh
-npx create-turbo@latest
+This repository uses **npm workspaces** and **Turborepo** to orchestrate three core applications and several shared packages:
+
+```mermaid
+graph TD
+    %% Applications
+    subgraph Apps [Applications]
+        Client["💻 apps/client (React Storefront)"]
+        Admin["📊 apps/admin (React Dashboard)"]
+        API["⚙️ apps/api (Backend API Service)"]
+    end
+
+    %% Packages
+    subgraph Packages [Shared Workspace Packages]
+        UI["📦 packages/ui (React Component Library)"]
+        TSConfig["🔧 packages/typescript-config"]
+        ESLintConfig["🧹 packages/eslint-config"]
+    end
+
+    %% Dependencies
+    Client --> UI
+    Client --> TSConfig
+    Client --> ESLintConfig
+
+    Admin --> UI
+    Admin --> TSConfig
+    Admin --> ESLintConfig
+
+    API --> TSConfig
+    API --> ESLintConfig
+
+    classDef apps fill:#4F46E5,stroke:#312E81,color:#FFF;
+    classDef pkgs fill:#10B981,stroke:#065F46,color:#FFF;
+    class Client,Admin,API apps;
+    class UI,TSConfig,ESLintConfig pkgs;
 ```
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## 🛠️ Tech Stack & Workspace Overview
 
-### Apps and Packages
+### Applications (`apps/`)
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- **`apps/client`**: The public-facing e-commerce storefront.
+  - **Tech**: [React 19](https://react.dev/), [Vite](https://vite.dev/), [Tailwind CSS v4](https://tailwindcss.com/) (with Babel & React Compiler), TypeScript.
+  - **Features**: Product listings, shopping cart, user checkout, search filters, order history.
+- **`apps/admin`**: The internal back-office management panel.
+  - **Tech**: React 19, Vite, Tailwind CSS v4, TypeScript.
+  - **Features**: Inventory management, product editing, order fulfillment tracking, customer analysis dashboard.
+- **`apps/api`**: The backend server powering both interfaces.
+  - **Tech**: Node.js, Express (or equivalent Node framework), TypeScript.
+  - **Features**: RESTful APIs, database integrations (ORM), auth middleware, payment gateway integrations, order processing queues.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### Shared Packages (`packages/`)
 
-### Utilities
+- **`@repo/ui`**: A shared React component library (e.g., buttons, inputs, modal dialogs) used consistently across both the `client` and `admin` portals to preserve UI/UX design tokens.
+- **`@repo/typescript-config`**: Shared base TypeScript configurations (`tsconfig.json`) to enforce strict type checking across all workspace directories.
+- **`@repo/eslint-config`**: Shared ESLint standard configurations to ensure strict code style, formatting, and linting guidelines.
 
-This Turborepo has some additional tools already setup for you:
+---
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## 🚀 Getting Started
 
-### Build
+Follow these steps to set up and run the project locally.
 
-To build all apps and packages, run the following command:
+### Prerequisites
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+- **Node.js**: `v18` or higher (configured in `package.json` engines).
+- **npm**: `v11` or higher (or your preferred package manager with workspace support).
 
-```sh
-cd my-turborepo
-turbo build
+### 1. Clone & Install Dependencies
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/e-commerce.git
+cd e-commerce
+
+# Install dependencies for all apps and packages
+npm install
 ```
 
-Without global `turbo`, use your package manager:
+### 2. Set Up Environment Variables
 
-```sh
-cd my-turborepo
-npx turbo build
-npm dlx turbo build
-npm exec turbo build
+Each application contains a `.env.example` file. Copy this file to `.env` in the respective directories and customize the configuration.
+
+```bash
+# Example for apps/api
+cp apps/api/.env.example apps/api/.env
+
+# Example for apps/client
+cp apps/client/.env.example apps/client/.env
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+### 3. Local Development
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Start the development server for all projects simultaneously:
 
-```sh
-turbo build --filter=docs
+```bash
+npm run dev
 ```
 
-Without global `turbo`:
+This starts the Vite dev server for `client` and `admin`, and watches the `api` and shared UI packages. Turborepo handles task orchestration and outputs logs concurrently.
 
-```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
+#### Running a Specific Application (Filters)
+
+If you only want to work on one part of the project, use Turborepo's `--filter` flag to minimize memory consumption:
+
+```bash
+# Start only the storefront (client)
+npx turbo dev --filter=client
+
+# Start only the administration dashboard (admin)
+npx turbo dev --filter=admin
+
+# Start only the API backend (api)
+npx turbo dev --filter=api
 ```
 
-### Develop
+---
 
-To develop all apps and packages, run the following command:
+## 🔨 Build & Production Ready
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+### Build All Workspaces
 
-```sh
-cd my-turborepo
-turbo dev
+To bundle all applications and compile TypeScript for production:
+
+```bash
+npm run build
 ```
 
-Without global `turbo`, use your package manager:
+This will run type-checking, build the shared configurations, and compile the `client`, `admin`, and `api` assets. Turborepo caches successful builds to ensure subsequent builds compile only modified files, saving significant time.
 
-```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
+### Verify Types & Linting
+
+Validate the codebase's integrity before pushing code:
+
+```bash
+# Run ESLint across the entire workspace
+npm run lint
+
+# Run TypeScript compilation checks across all modules
+npm run check-types
+
+# Auto-format all TypeScript, React, and markdown files using Prettier
+npm run format
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## 📦 Monorepo Workflow
 
-```sh
-turbo dev --filter=web
-```
+### Adding Dependencies
 
-Without global `turbo`:
+When adding packages, ensure you install them to the correct workspace rather than the root directory:
 
-```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
-```
+- **Add a dependency to a specific application** (e.g., adding `axios` to `apps/client`):
+  ```bash
+  npm install axios -w apps/client
+  ```
+- **Add a development dependency to the root** (e.g., adding `nodemon` or tooling):
+  ```bash
+  npm install nodemon --save-dev
+  ```
 
-### Remote Caching
+### Adding New Shared Components
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+To add a new component to the shared library (`@repo/ui`):
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+1.  Navigate to `packages/ui` or use the component generator (if configured):
+    ```bash
+    npx turbo gen react-component
+    ```
+2.  Import and export it inside `packages/ui/src`.
+3.  Any updates are immediately available to `client` and `admin` during development.
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## ⚡ Remote Caching with Turborepo
 
-```sh
-cd my-turborepo
-turbo login
-```
+Turborepo caches your compilation outputs. To share your cache with your teammates or in a CI/CD environment, you can link the monorepo to Vercel Remote Caching:
 
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
+```bash
+# Authenticate with Vercel CLI
 npx turbo login
-npm exec turbo login
-npm exec turbo login
-```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
+# Link the project to Remote Cache
 npx turbo link
-npm exec turbo link
-npm exec turbo link
 ```
 
-## Useful Links
+---
 
-Learn more about the power of Turborepo:
+## 🗂️ Project Structure
 
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+```text
+e-commerce/
+├── apps/
+│   ├── admin/             # Vite + React 19 Admin Dashboard
+│   ├── api/               # Express / Node.js API Service
+│   └── client/            # Vite + React 19 Customer Storefront
+├── packages/
+│   ├── eslint-config/     # Core ESLint configuration profiles
+│   ├── typescript-config/ # Common TypeScript tsconfig configurations
+│   └── ui/                # Shared React UI Component Library
+├── package.json           # Monorepo root workspaces and config
+├── turbo.json             # Turborepo task pipeline configuration
+└── README.md              # Project documentation (You are here)
+```
+
+---
+
+## 🤝 Contribution Guidelines
+
+1.  **Branch naming**: Use `feature/`, `bugfix/`, or `hotfix/` prefixes (e.g., `feature/cart-checkout-page`).
+2.  **Lint and Prettier check**: Ensure all tests and checks pass before opening a Pull Request (`npm run lint` and `npm run check-types`).
+3.  **Clean Git commits**: Use semantic commit messages (e.g., `feat(client): add cart preview component`).
+
+---
+
+_Made with ❤️ by Venkatesh G._

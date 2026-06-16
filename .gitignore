@@ -36,3 +36,30 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+
+# Logs
+*.log
+
+# Typescript
+*.tsbuildinfo
+
+# Turborepo cache
+.turbo/
+
+# Storybook (if you use it later)
+storybook-static/
+
+# Database
+*.db
+*.sqlite
+
+# Environment files
+.env*
+!.env.example
