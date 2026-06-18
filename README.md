@@ -182,19 +182,6 @@ To add a new component to the shared library (`@repo/ui`):
 
 ---
 
-## ⚡ Remote Caching with Turborepo
-
-Turborepo caches your compilation outputs. To share your cache with your teammates or in a CI/CD environment, you can link the monorepo to Vercel Remote Caching:
-
-```bash
-# Authenticate with Vercel CLI
-npx turbo login
-
-# Link the project to Remote Cache
-npx turbo link
-```
-
----
 
 ## 🗂️ Project Structure
 
@@ -213,14 +200,4 @@ e-commerce/
 └── README.md              # Project documentation (You are here)
 ```
 
----
 
-## 🤝 Contribution Guidelines
-
-1.  **Branch naming**: Use `feature/`, `bugfix/`, or `hotfix/` prefixes (e.g., `feature/cart-checkout-page`).
-2.  **Lint and Prettier check**: Ensure all tests and checks pass before opening a Pull Request (`npm run lint` and `npm run check-types`).
-3.  **Clean Git commits**: Use semantic commit messages (e.g., `feat(client): add cart preview component`).
-
----
-
-_Made with ❤️ by Venkatesh G._
