@@ -1,22 +1,43 @@
-import { OK } from "../constants/https";
-import { createAccount } from "../services.ts/auth.service";
-import appAssert from "../utils/appAssert";
+import { CREATED, OK } from "../constants/https";
+import { createAccount, loginUser } from "../services.ts/auth.service";
 import { catchError } from "../utils/catchError";
-import { registerInput } from "@repo/types";
+import { loginInSchema, registerSchema } from "@repo/types";
+import { setAuthCookies } from "../utils/cookies";
 
 export const registerHandler = catchError(
     async (req, res) => {
         // validate request
-        const request = registerInput.parse({
+        const request = registerSchema.parse({
             ...req.body,
             userAgent: req.headers["user-agent"]
         });
 
-        const result = await createAccount(request);
-        console.log("result: ", result);
+        const { user, accessToken, refreshToken } = await createAccount(request);
 
-        res.status(OK).json({"result": result});
+        setAuthCookies({ res, accessToken, refreshToken })
+            .status(CREATED)
+            .json(user);
         // call a service 
         // return response
+    }
+)
+
+export const loginHandler = catchError(
+
+    async (req, res) => {
+        // validate request
+        const request = loginInSchema.parse({
+            ...req.body,
+            userAgent: req.headers["user-agent"],
+        })
+
+        const { user, accessToken, refreshToken } = await loginUser(request);
+        
+        setAuthCookies({ res, accessToken, refreshToken })
+            .status(OK)
+            .json({
+                user,
+                message: "Login Successful!"
+            })
     }
 )
