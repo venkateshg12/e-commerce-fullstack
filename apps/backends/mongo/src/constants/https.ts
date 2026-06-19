@@ -13,6 +13,7 @@ export type HttpStatusCode =
 | typeof OK
 | typeof CREATED
 | typeof BAD_REQUEST
+| typeof UNAUTHORIZED
 | typeof FORBIDDEN
 | typeof FORBIDDEN
 | typeof NOT_FOUND
