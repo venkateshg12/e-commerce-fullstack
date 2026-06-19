@@ -7,10 +7,14 @@ export const credentialSchema = z.object({
     userAgent: z.string().optional()
 })
 
-export type CredentialSchema = z.infer<typeof credentialSchema>;
+export const credentialsDataSchema = credentialSchema.extend({
+    name: z.string().min(1).max(255)
+})
+
+export type CredentialSchema = z.infer<typeof credentialsDataSchema>;
 
 // register inputs
-export const registerInput = credentialSchema.extend({
+export const registerSchema = credentialSchema.extend({
     name: z.string().min(1).max(255),
     confirmPassword: z.string().min(6).max(255),
 }).refine(
@@ -19,9 +23,9 @@ export const registerInput = credentialSchema.extend({
     path: ["confirmPassword"]
 }
 )
-export type RegisterInput = z.infer<typeof registerInput>;
+export type RegisterSchema = z.infer<typeof registerSchema>;
 
 
 // login inputs
-export const signInInput = credentialSchema;
-export type SignInInput = z.infer<typeof signInInput>;
+export const loginInSchema = credentialSchema;
+export type LoginInSchema = z.infer<typeof loginInSchema>;
