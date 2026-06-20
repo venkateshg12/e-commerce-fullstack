@@ -10,6 +10,7 @@ import { connectDB } from "./config/db";
 
 import { authRoutes } from "./routes/auth.route";
 import cookieParser from "cookie-parser";
+import { sendMail } from "./utils/sendMail";
 
 
 
@@ -23,18 +24,29 @@ async function main() {
     app.use(express.json());
     app.use(morgan('dev'));
     app.use(cookieParser());
-    
-    
+
+
     // Routes declaration.
     app.use("/auth", authRoutes);
-    
+
     app.get("/health", async (req, res) => {
         res.status(200).json(ok({ message: "Server is running" }));
     })
-    
-    
+
+    app.get("/send-test", async (_, res) => {
+        await sendMail({
+            to: "gvenkatesh9993@gmail.com",
+            subject: "Testing Nodemailer",
+            text: "Hello from GV Projects",
+            html: "<h1>Hello from GV Projects</h1>",
+        });
+
+        res.send("Email Sent");
+    });
+
+
     app.listen(PORT, () => { console.log(`Server is listening to the port: ${PORT}`) })
-    
+
     // Error Handlers
     app.use(notFound);
     app.use(errorHandler);

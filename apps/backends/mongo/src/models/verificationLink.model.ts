@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import { VerificationLinkDocument } from "../types/verificationLink.types";
-import { VerificationLinkType } from "../constants/verificationLinkType";
 
 const verificationLinkSchema = new mongoose.Schema<VerificationLinkDocument>({
 
@@ -13,6 +12,11 @@ const verificationLinkSchema = new mongoose.Schema<VerificationLinkDocument>({
     type: {
         type: String,
         required: true
+    },
+    token: {
+        type: String,
+        required: true,
+        index: true
     },
     createdAt: {
         type: Date,

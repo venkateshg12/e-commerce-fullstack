@@ -3,6 +3,7 @@ import { AppError } from "../utils/appError";
 import { fail } from "../utils/apiEnvelope";
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR } from "../constants/https";
 import z, { ZodError } from "zod";
+import { clearAuthCookies, REFRESH_PATH } from "../utils/cookies";
 
 const handleZodError = (res: Response, error: z.ZodError) => {
     const errors = error.issues.map((issue) => ({
@@ -20,6 +21,9 @@ export function errorHandler(
 ) {
     if (error instanceof z.ZodError) {
         return handleZodError(res, error)
+    }
+    if(_req.path ===  REFRESH_PATH) {
+        clearAuthCookies(res);
     }
     if (error instanceof AppError) {
         return res.status(error.statusCode).json(fail(error.message, "APP_ERROR"));
