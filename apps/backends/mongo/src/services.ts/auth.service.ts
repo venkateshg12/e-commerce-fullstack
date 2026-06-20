@@ -4,11 +4,15 @@ import appAssert from "../utils/appAssert";
 import { CONFLICT, UNAUTHORIZED } from "../constants/https";
 import VerificationLinkModel from "../models/verificationLink.model";
 import { VerificationLinkType } from "../constants/verificationLinkType";
-import { tenMinutesFromNow } from "../utils/date";
+import { ONE_DAY_MS, tenMinutesFromNow, thirtyDaysFromNow } from "../utils/date";
 import sessionModel from "../models/session.model";
-import jwt from "jsonwebtoken";
 import { JWT_REFRESH_SECRET, JWT_SECRET } from "../constants/env";
-
+import { refreshTokenSignOptions, singToken, verifyToken } from "../utils/jwt";
+import { RefreshTokenPayload } from "../types/auth.types";
+import SessionModel from "../models/session.model";
+import crypto from "crypto";
+import { getVerificationEmail } from "../utils/emailTemplates";
+import { sendMail } from "../utils/sendMail";
 
 
 export const createAccount = async (data: CredentialSchema) => {
@@ -26,12 +30,20 @@ export const createAccount = async (data: CredentialSchema) => {
 
 
     // create verification email 
-    const verificationLink = VerificationLinkModel.create({
+    const token = crypto.randomBytes(32).toString("hex");
+
+    const verificationLink = await VerificationLinkModel.create({
         userId: user._id,
         type: VerificationLinkType.EmailVerification,
+        token: token,
         expiresAt: tenMinutesFromNow()
+    });
 
-    })
+    const emailTemplate = getVerificationEmail(token);
+    await sendMail({
+        to: user.email,
+        ...emailTemplate
+    });
 
     // create session
     const session = await sessionModel.create({
@@ -40,27 +52,23 @@ export const createAccount = async (data: CredentialSchema) => {
     })
 
     // sign access token & refresh token
-    const refreshToken = jwt.sign(
+    const refreshToken = singToken(
         {
-            userId: user._id,
             sessionId: session._id
         },
-        JWT_REFRESH_SECRET,
-        { expiresIn: "30d" }
+        refreshTokenSignOptions
     )
 
-    const accessToken = jwt.sign(
+    const accessToken = singToken(
         {
             userId: user._id,
             sessionId: session._id
-        },
-        JWT_SECRET,
-        { expiresIn: "15m" }
+        }
     )
+
+    // return user & tokens
     return { user: user.omitPassword(), accessToken, refreshToken };
 }
-// send a verification email
-// return user & tokens
 
 
 export const loginUser = async ({ email, password, userAgent }: LoginInSchema) => {
@@ -81,24 +89,49 @@ export const loginUser = async ({ email, password, userAgent }: LoginInSchema) =
     })
 
     // sign access token & refresh token
-    const accessToken = jwt.sign(
+    const refreshToken = singToken(
         {
-            userId: userId,
             sessionId: session._id
         },
-        JWT_SECRET,
-        { expiresIn: "15m" },
+        refreshTokenSignOptions
     )
 
-    const refreshToken = jwt.sign(
+    const accessToken = singToken(
         {
-            userId: userId,
+            userId: user._id,
             sessionId: session._id
-        },
-        JWT_REFRESH_SECRET,
-        { expiresIn: "30d" },
+        }
     )
 
     // return user & tokens
-    return { user:user.omitPassword(), accessToken, refreshToken };
+    return { user: user.omitPassword(), accessToken, refreshToken };
+}
+
+
+export const refreshUserAccessToken = async (refreshToken: string) => {
+    const now = Date.now();
+    const { payload } = verifyToken<RefreshTokenPayload>(refreshToken, { secret: JWT_REFRESH_SECRET });
+    appAssert(payload, UNAUTHORIZED, "Invalid refresh token");
+
+    const session = await SessionModel.findById(payload.sessionId);
+    appAssert(session && (session.expiresAt.getTime() > now), UNAUTHORIZED, "Session Expired!")
+
+    // refresh the session if it expires in 24 hours
+    const sessionNeedsRefresh = session.expiresAt.getTime() - now <= ONE_DAY_MS;
+
+    if (sessionNeedsRefresh) {
+        session.expiresAt = thirtyDaysFromNow();
+        await session.save();
+    }
+
+    const newRefreshToken = sessionNeedsRefresh ? singToken(
+        { sessionId: session._id }, refreshTokenSignOptions
+    ) : undefined
+
+    const accessToken = singToken({
+        userId: session.userId,
+        sessionId: session._id
+    });
+
+    return { accessToken, newRefreshToken };
 }
