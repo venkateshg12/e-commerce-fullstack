@@ -3,12 +3,14 @@ import { createAccount, loginUser, refreshUserAccessToken } from "../services.ts
 import { catchError } from "../utils/catchError";
 import { loginInSchema, registerSchema } from "@repo/types";
 import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies } from "../utils/cookies";
-import { verifyToken } from "../utils/jwt";
+import { refreshTokenSignOptions, singToken, verifyToken } from "../utils/jwt";
 import SessionModel from "../models/session.model";
 import appAssert from "../utils/appAssert";
 import VerificationLinkModel from "../models/verificationLink.model";
 import UserModel from "../models/user.model";
 import { CORS_ORIGIN } from "../constants/env";
+import { VerificationLinkType } from "../constants/verificationLinkType";
+import sessionModel from "../models/session.model";
 
 export const registerHandler = catchError(
     async (req, res) => {
@@ -18,13 +20,11 @@ export const registerHandler = catchError(
             userAgent: req.headers["user-agent"]
         });
 
-        const { user, accessToken, refreshToken } = await createAccount(request);
-
-        setAuthCookies({ res, accessToken, refreshToken })
-            .status(CREATED)
-            .json(user);
         // call a service 
+        const { user } = await createAccount(request);
+
         // return response
+        res.status(CREATED).json(user);
     }
 )
 
@@ -81,7 +81,12 @@ export const verifyEmailHandler = catchError(
         const { token } = req.params;
 
         // find the token;
-        const verificationLink = await VerificationLinkModel.findOne({ token });
+        const verificationLink = await VerificationLinkModel.findOne(
+            {
+                token: token,
+                type: VerificationLinkType.EmailVerification
+            }
+        );
 
         if (!verificationLink) {
             // If token is invalid or expired, redirect to frontend with error parameter
@@ -91,15 +96,37 @@ export const verifyEmailHandler = catchError(
         const user = await UserModel.findByIdAndUpdate(
             verificationLink?.userId,
             { verified: true },
-            { returnDocument:"after"}
+            { returnDocument: "after" }
         );
 
         if (!user) {
             return res.redirect(`${CORS_ORIGIN}/email-verification?success=false&reason=usernotfound`);
         }
 
+        // create session
+        const session = await sessionModel.create({
+            userId: user._id,
+            userAgent: "",
+        })
+
+        // sign access token & refresh token
+        const refreshToken = singToken(
+            {
+                sessionId: session._id
+            },
+            refreshTokenSignOptions
+        )
+
+        const accessToken = singToken(
+            {
+                userId: user._id,
+                sessionId: session._id
+            }
+        )
+
         await verificationLink?.deleteOne();
-        res.status(OK).json({messsage : "Email Verified Successfully!"})
-        res.redirect(`${CORS_ORIGIN}/?verified=true`);
+
+        // 3. Set cookies on response and redirect to frontend
+        return setAuthCookies({ res, accessToken, refreshToken }).redirect(`${CORS_ORIGIN}/?verified=true`);
     }
 )
