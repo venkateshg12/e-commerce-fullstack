@@ -45,29 +45,9 @@ export const createAccount = async (data: CredentialSchema) => {
         ...emailTemplate
     });
 
-    // create session
-    const session = await sessionModel.create({
-        userId: user._id,
-        userAgent: data.userAgent,
-    })
-
-    // sign access token & refresh token
-    const refreshToken = singToken(
-        {
-            sessionId: session._id
-        },
-        refreshTokenSignOptions
-    )
-
-    const accessToken = singToken(
-        {
-            userId: user._id,
-            sessionId: session._id
-        }
-    )
 
     // return user & tokens
-    return { user: user.omitPassword(), accessToken, refreshToken };
+    return { user: user.omitPassword() };
 }
 
 
