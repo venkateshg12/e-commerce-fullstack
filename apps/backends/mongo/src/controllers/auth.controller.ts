@@ -1,7 +1,7 @@
-import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../constants/https";
-import { createAccount, loginUser, refreshUserAccessToken } from "../services.ts/auth.service";
+import { BAD_REQUEST, CREATED, NOT_FOUND, OK, UNAUTHORIZED } from "../constants/https";
+import { createAccount, loginUser, refreshUserAccessToken, resetPassword, sentResetPasswordEmail } from "../services.ts/auth.service";
 import { catchError } from "../utils/catchError";
-import { loginInSchema, registerSchema } from "@repo/types";
+import { emailSchema, loginInSchema, registerSchema, resetPasswordSchema } from "@repo/types";
 import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies } from "../utils/cookies";
 import { refreshTokenSignOptions, singToken, verifyToken } from "../utils/jwt";
 import SessionModel from "../models/session.model";
@@ -24,7 +24,7 @@ export const registerHandler = catchError(
         const { user } = await createAccount(request);
 
         // return response
-        res.status(CREATED).json(user);
+        return res.status(CREATED).json({ message: "Account created successfully. Please verify your email address." });
     }
 )
 
@@ -70,7 +70,7 @@ export const refreshHandler = catchError(
         if (newRefreshToken) {
             res.cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions());
         }
-        res.status(OK).cookie("accessToken", accessToken, getAccessTokenCookieOptions()).json({
+        return res.status(OK).cookie("accessToken", accessToken, getAccessTokenCookieOptions()).json({
             message: "Access token refreshed"
         })
     }
@@ -130,3 +130,33 @@ export const verifyEmailHandler = catchError(
         return setAuthCookies({ res, accessToken, refreshToken }).redirect(`${CORS_ORIGIN}/?verified=true`);
     }
 )
+
+export const forgotPasswordHanlder = catchError(
+    async (req, res) => {
+        const request = emailSchema.parse(req.body);
+
+        // call the service
+        const sendLinkMessage = await sentResetPasswordEmail(request.email);
+        return res.status(OK).json({ message: sendLinkMessage })
+    }
+)
+
+export const resetPasswordHandler = catchError(
+    async (req, res) => {
+        const request = resetPasswordSchema.parse(req.body);
+        const  token  = String(req.params.token)
+
+        appAssert(token, BAD_REQUEST, "Missing reset token");
+
+        await resetPassword({
+            token,
+            password: request.password
+        });
+
+        clearAuthCookies(res)
+            .status(OK)
+            .json({
+                message: "Password reset successful"
+            });
+    }
+);

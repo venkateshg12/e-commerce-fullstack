@@ -1,7 +1,7 @@
 import { CredentialSchema, LoginInSchema } from "@repo/types";
 import UserModel from "../models/user.model";
 import appAssert from "../utils/appAssert";
-import { CONFLICT, UNAUTHORIZED } from "../constants/https";
+import { BAD_REQUEST, CONFLICT, NOT_FOUND, UNAUTHORIZED } from "../constants/https";
 import VerificationLinkModel from "../models/verificationLink.model";
 import { VerificationLinkType } from "../constants/verificationLinkType";
 import { ONE_DAY_MS, tenMinutesFromNow, thirtyDaysFromNow } from "../utils/date";
@@ -11,8 +11,9 @@ import { refreshTokenSignOptions, singToken, verifyToken } from "../utils/jwt";
 import { RefreshTokenPayload } from "../types/auth.types";
 import SessionModel from "../models/session.model";
 import crypto from "crypto";
-import { getVerificationEmail } from "../utils/emailTemplates";
+import { getPasswordResetEmail, getVerificationEmail } from "../utils/emailTemplates";
 import { sendMail } from "../utils/sendMail";
+import { token } from "morgan";
 
 
 export const createAccount = async (data: CredentialSchema) => {
@@ -26,8 +27,7 @@ export const createAccount = async (data: CredentialSchema) => {
         name: data.name,
         email: data.email,
         password: data.password
-    })
-
+    });
 
     // create verification email 
     const token = crypto.randomBytes(32).toString("hex");
@@ -45,8 +45,7 @@ export const createAccount = async (data: CredentialSchema) => {
         ...emailTemplate
     });
 
-
-    // return user & tokens
+    // return user
     return { user: user.omitPassword() };
 }
 
@@ -114,4 +113,55 @@ export const refreshUserAccessToken = async (refreshToken: string) => {
     });
 
     return { accessToken, newRefreshToken };
+}
+
+export const sentResetPasswordEmail = async (email: string) => {
+    // get the user by email
+    const user = await UserModel.findOne({ email });
+    appAssert(user, NOT_FOUND, "User not found");
+
+    // create verification email
+    const token = crypto.randomBytes(32).toString("hex");
+    const verificationLink = await VerificationLinkModel.create({
+        userId: user._id,
+        type: VerificationLinkType.PasswordReset,
+        token: token,
+        expiresAt: tenMinutesFromNow()
+    })
+
+    //send verification email
+    const emailTemplate = getPasswordResetEmail(token);
+    const { data, error } = await sendMail({
+        to: user.email,
+        ...emailTemplate
+    });
+
+    //return success
+    return {message: "Password reset link was successfully send to email"}
+}
+
+export const resetPassword = async ({ token, password }: { token: string; password: string }) => {
+    
+    const verificationLink = await VerificationLinkModel.findOne({
+        token,
+        type: VerificationLinkType.PasswordReset
+    });
+
+    appAssert(
+        verificationLink && verificationLink.expiresAt.getTime() > Date.now(),
+        BAD_REQUEST,
+        "Invalid or expired reset link"
+    );
+
+    const user = await UserModel.findById(verificationLink.userId);
+    appAssert(user, NOT_FOUND, "User not found");
+
+    user.password = password;
+    await user.save();
+
+    await verificationLink.deleteOne();
+
+    await SessionModel.deleteMany({ userId: user._id });
+
+    return { message: "Password reset successful" };
 }
