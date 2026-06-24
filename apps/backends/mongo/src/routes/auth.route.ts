@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginHandler, logoutHandler, refreshHandler, registerHandler, verifyEmailHandler } from "../controllers/auth.controller";
+import { forgotPasswordHanlder, loginHandler, logoutHandler, refreshHandler, registerHandler, resetPasswordHandler, verifyEmailHandler } from "../controllers/auth.controller";
 
 export const authRoutes = Router();
 
@@ -10,3 +10,5 @@ authRoutes.post("/login", loginHandler);
 authRoutes.get("/refresh", refreshHandler);
 authRoutes.get("/logout", logoutHandler);
 authRoutes.get("/verify/:token", verifyEmailHandler);
+authRoutes.get("/password/forgot", forgotPasswordHanlder);
+authRoutes.post("/password/reset/:token", resetPasswordHandler);
