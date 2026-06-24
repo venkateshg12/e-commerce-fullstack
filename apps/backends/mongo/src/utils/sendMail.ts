@@ -8,6 +8,16 @@ export interface MailOptions {
     html: string;
 }
 
+const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT),
+    auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASSWORD,
+    },
+});
+
+
 export const sendMail = async (options: MailOptions) => {
     // If no SMTP settings are provided, fallback to console logging (helpful for local testing)
     if (!SMTP_USER || !SMTP_PASSWORD) {
@@ -16,23 +26,28 @@ export const sendMail = async (options: MailOptions) => {
         console.log(`Subject: ${options.subject}`);
         console.log(`Body: ${options.text}`);
         console.log("------------------------------");
-        return;
+        return {
+            data: null,
+            error: null,
+        };
     }
 
-    const transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: Number(SMTP_PORT),
-        auth: {
-            user: SMTP_USER,
-            pass: SMTP_PASSWORD,
-        },
-    });
-
-    await transporter.sendMail({
-        from: EMAIL_FROM,
-        to: options.to,
-        subject: options.subject,
-        text: options.text,
-        html: options.html,
-    });
+    try {
+        const info = await transporter.sendMail({
+            from: EMAIL_FROM,
+            to: options.to,
+            subject: options.subject,
+            text: options.text,
+            html: options.html,
+        });
+        return {
+            data: info,
+            error: null
+        }
+    } catch (error) {
+        return {
+            data: null,
+            error: error
+        }
+    }
 };
