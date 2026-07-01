@@ -1,3 +1,13 @@
+import { webcrypto } from "node:crypto";
+
+if (!globalThis.crypto) {
+  Object.defineProperty(globalThis, "crypto", {
+    value: webcrypto,
+    writable: false,
+    configurable: true,
+  });
+}
+
 import express from "express";
 import "dotenv/config";
 import { CORS_ORIGIN, PORT } from "./constants/env";
@@ -11,6 +21,7 @@ import { connectDB } from "./config/db";
 import { authRoutes } from "./routes/auth.route";
 import cookieParser from "cookie-parser";
 import { sendMail } from "./utils/sendMail";
+import sessionRoutes from "./routes/session.route";
 
 
 
@@ -28,6 +39,7 @@ async function main() {
 
     // Routes declaration.
     app.use("/auth", authRoutes);
+    app.use("/session",sessionRoutes);
 
     app.get("/health", async (req, res) => {
         res.status(200).json(ok({ message: "Server is running" }));
