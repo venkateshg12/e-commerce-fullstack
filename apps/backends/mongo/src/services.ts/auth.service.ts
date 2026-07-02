@@ -78,6 +78,7 @@ export const loginUser = async ({ email, password, userAgent }: LoginInSchema) =
     const accessToken = singToken(
         {
             userId: user._id,
+            role : user.role,
             sessionId: session._id
         }
     )

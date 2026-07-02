@@ -1,4 +1,4 @@
-import express, { Router } from "express"
+import { Router } from "express"
 import authenticate from "../middleware/authenticate";
 import { deleteSessionHandler, getSessionHandler } from "../controllers/session.controller";
 

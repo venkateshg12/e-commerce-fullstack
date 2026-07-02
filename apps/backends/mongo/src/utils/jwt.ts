@@ -1,6 +1,4 @@
 import { SignOptions, VerifyOptions } from "jsonwebtoken"
-import { SessionDocument } from "../types/session.types"
-import { UserDocument } from "../types/user.types"
 import jwt from "jsonwebtoken";
 import { JWT_REFRESH_SECRET, JWT_SECRET } from "../constants/env";
 import { AccessTokenPayload, RefreshTokenPayload } from "../types/auth.types";
@@ -24,7 +22,7 @@ export const singToken = (
     payload: AccessTokenPayload | RefreshTokenPayload,
     options?: SignOptionsAndSecret
 ) => {
-    const { secret, ...signOpts } = options || accessTokenSignOptions
+    const { secret, ...signOpts } = options || accessTokenSignOptions;
     return jwt.sign(payload, secret, signOpts);
 }
 
