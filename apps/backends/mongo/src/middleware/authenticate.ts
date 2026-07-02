@@ -11,11 +11,11 @@ const authenticate: RequestHandler = (req, res, next) => {
     const { error, payload } = verifyToken(accessToken);
 
     appAssert(payload, UNAUTHORIZED, error == "jwt expired" ? "Token expired" : "Invalid token", appErrorCode.InvalidAccessToken);
-
+    // console.log(payload);
     req.userId = payload.userId;
     req.sessionId = payload.sessionId;
+    req.role = payload.role;
     next();
-
 }
 
 export default authenticate;

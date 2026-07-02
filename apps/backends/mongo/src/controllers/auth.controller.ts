@@ -120,6 +120,7 @@ export const verifyEmailHandler = catchError(
         const accessToken = singToken(
             {
                 userId: user._id,
+                role : user.role,
                 sessionId: session._id
             }
         )
