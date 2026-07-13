@@ -41,11 +41,27 @@ const userSchema = new mongoose.Schema<UserDocument>({
     },
     email: {
         type: String,
-        required: false
+        required: true,
+        unique: true
     },
     password: {
         type: String,
-        required: true,
+        required: function (this: any) {
+            return this.authProvider === "local";
+        }
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    authProvider: {
+        type: String,
+        enum: ["local", "google"],
+        default: "local"
+    },
+    avatar: {
+        type: String
     },
     role: {
         type: String,
@@ -72,13 +88,16 @@ const userSchema = new mongoose.Schema<UserDocument>({
 )
 
 userSchema.pre("save", async function () {
-    if (!this.isModified("password")) {
+    if (!this.password || !this.isModified("password")) {
         return;
     }
     this.password = await hashValue(this.password);
 })
 
 userSchema.methods.comparePassword = async function (val: string) {
+    if (!this.password) {
+        return false;
+    }
     return compareValue(val, this.password);
 }
 
