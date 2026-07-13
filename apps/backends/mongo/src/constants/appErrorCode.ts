@@ -1,4 +1,5 @@
 export enum appErrorCode {
     InvalidAccessToken = "InvalidAccessToken",
-    Forbidden = "ForbiddenAccess"
+    Forbidden = "ForbiddenAccess",
+    TokenExpired = "TOKEN_EXPIRED"
 }

@@ -1,7 +1,7 @@
 import { CredentialSchema, LoginInSchema } from "@repo/types";
 import UserModel from "../models/user.model";
 import appAssert from "../utils/appAssert";
-import { BAD_REQUEST, CONFLICT, NOT_FOUND, UNAUTHORIZED } from "../constants/https";
+import { BAD_REQUEST, CONFLICT, NOT_FOUND, OK, UNAUTHORIZED } from "../constants/https";
 import VerificationLinkModel from "../models/verificationLink.model";
 import { VerificationLinkType } from "../constants/verificationLinkType";
 import { ONE_DAY_MS, tenMinutesFromNow, thirtyDaysFromNow } from "../utils/date";
@@ -14,6 +14,7 @@ import crypto from "crypto";
 import { getPasswordResetEmail, getVerificationEmail } from "../utils/emailTemplates";
 import { sendMail } from "../utils/sendMail";
 import { token } from "morgan";
+import { ok } from "../utils/apiEnvelope";
 
 
 export const createAccount = async (data: CredentialSchema) => {
@@ -78,7 +79,7 @@ export const loginUser = async ({ email, password, userAgent }: LoginInSchema) =
     const accessToken = singToken(
         {
             userId: user._id,
-            role : user.role,
+            role: user.role,
             sessionId: session._id
         }
     )
@@ -138,11 +139,11 @@ export const sentResetPasswordEmail = async (email: string) => {
     });
 
     //return success
-    return {message: "Password reset link was successfully send to email"}
+    return { message: "Password reset link was successfully send to email" }
 }
 
 export const resetPassword = async ({ token, password }: { token: string; password: string }) => {
-    
+
     const verificationLink = await VerificationLinkModel.findOne({
         token,
         type: VerificationLinkType.PasswordReset
@@ -165,4 +166,31 @@ export const resetPassword = async ({ token, password }: { token: string; passwo
     await SessionModel.deleteMany({ userId: user._id });
 
     return { message: "Password reset successful" };
+}
+
+export const resendVerificationEmail = async(email : string) => {
+    const user = await UserModel.findOne({email});
+    appAssert(user, NOT_FOUND, "User does not exist! Please register");
+    appAssert(!user.verified, BAD_REQUEST, "Email is already verified. Please login");
+
+    await VerificationLinkModel.deleteMany({
+        userId : user._id,
+        type : VerificationLinkType.EmailVerification
+    });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    await VerificationLinkModel.create({
+        userId : user._id,
+        type : VerificationLinkType.EmailVerification,
+        token : token,
+        expiresAt : tenMinutesFromNow()
+    });
+
+    const emailTemplate = getVerificationEmail(token);
+    await sendMail({
+        to: user.email,
+        ...emailTemplate
+    });
+
+    return { message: "A new verification link was successfully sent to your email" };
 }

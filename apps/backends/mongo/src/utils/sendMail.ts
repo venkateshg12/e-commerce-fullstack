@@ -45,6 +45,7 @@ export const sendMail = async (options: MailOptions) => {
             error: null
         }
     } catch (error) {
+        console.error("Nodemailer email sending failed:", error);
         return {
             data: null,
             error: error
