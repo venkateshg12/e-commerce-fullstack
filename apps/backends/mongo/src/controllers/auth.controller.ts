@@ -1,5 +1,5 @@
 import { BAD_REQUEST, CREATED, NOT_FOUND, OK, UNAUTHORIZED } from "../constants/https";
-import { createAccount, loginUser, refreshUserAccessToken, resetPassword, sentResetPasswordEmail } from "../services.ts/auth.service";
+import { createAccount, loginUser, refreshUserAccessToken, resendVerificationEmail, resetPassword, sentResetPasswordEmail } from "../services.ts/auth.service";
 import { catchError } from "../utils/catchError";
 import { emailSchema, loginInSchema, registerSchema, resetPasswordSchema } from "@repo/types";
 import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies } from "../utils/cookies";
@@ -11,6 +11,7 @@ import UserModel from "../models/user.model";
 import { CORS_ORIGIN } from "../constants/env";
 import { VerificationLinkType } from "../constants/verificationLinkType";
 import sessionModel from "../models/session.model";
+import { ok } from "../utils/apiEnvelope";
 
 export const registerHandler = catchError(
     async (req, res) => {
@@ -24,7 +25,7 @@ export const registerHandler = catchError(
         const { user } = await createAccount(request);
 
         // return response
-        return res.status(CREATED).json({ message: "Account created successfully. Please verify your email address." });
+        return res.status(CREATED).json(ok({ title: "Account created Successfully", "message": "We've sent an account activation link to your email address. Please check your inbox to activate your account." }));
     }
 )
 
@@ -41,10 +42,10 @@ export const loginHandler = catchError(
 
         setAuthCookies({ res, accessToken, refreshToken })
             .status(OK)
-            .json({
+            .json(ok({
                 user,
                 message: "Login Successful!"
-            })
+            }))
     }
 )
 
@@ -56,7 +57,7 @@ export const logoutHandler = catchError(
             await SessionModel.findByIdAndDelete(payload.sessionId);
         }
 
-        clearAuthCookies(res).status(OK).json({ message: "Logout Successful!" });
+        clearAuthCookies(res).status(OK).json(ok({ message: "Logout Successful!" }));
     }
 )
 
@@ -70,9 +71,9 @@ export const refreshHandler = catchError(
         if (newRefreshToken) {
             res.cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions());
         }
-        return res.status(OK).cookie("accessToken", accessToken, getAccessTokenCookieOptions()).json({
+        return res.status(OK).cookie("accessToken", accessToken, getAccessTokenCookieOptions()).json(ok({
             message: "Access token refreshed"
-        })
+        }))
     }
 )
 
@@ -88,25 +89,20 @@ export const verifyEmailHandler = catchError(
             }
         );
 
-        if (!verificationLink) {
-            // If token is invalid or expired, redirect to frontend with error parameter
-            return res.redirect(`${CORS_ORIGIN}/email-verification?success=false&reason=expired`);
-        }
+        appAssert(verificationLink, BAD_REQUEST, "Verification link has expired or is invalid.");
 
         const user = await UserModel.findByIdAndUpdate(
-            verificationLink?.userId,
+            verificationLink.userId,
             { verified: true },
             { returnDocument: "after" }
         );
 
-        if (!user) {
-            return res.redirect(`${CORS_ORIGIN}/email-verification?success=false&reason=usernotfound`);
-        }
+        appAssert(user, NOT_FOUND, "User not found! Please register");
 
         // create session
         const session = await sessionModel.create({
             userId: user._id,
-            userAgent: "",
+            userAgent: req.headers["user-agent"] || "",
         })
 
         // sign access token & refresh token
@@ -120,32 +116,43 @@ export const verifyEmailHandler = catchError(
         const accessToken = singToken(
             {
                 userId: user._id,
-                role : user.role,
+                role: user.role,
                 sessionId: session._id
             }
         )
 
-        await verificationLink?.deleteOne();
+        await verificationLink.deleteOne();
 
-        // 3. Set cookies on response and redirect to frontend
-        return setAuthCookies({ res, accessToken, refreshToken }).redirect(`${CORS_ORIGIN}/?verified=true`);
+        // 3. Set cookies on response and return success JSON
+        return setAuthCookies({ res, accessToken, refreshToken }).status(OK).json(ok({
+            user: user.omitPassword(),
+            message: "Email verified successfully!"
+        }));
     }
 )
 
-export const forgotPasswordHanlder = catchError(
+export const resendVerificationHandler = catchError(
+    async (req, res) => {
+        const { email } = emailSchema.parse(req.body);
+        const result = await resendVerificationEmail(email);
+        return res.status(OK).json(ok(result));
+    }
+)
+
+export const forgotPasswordHandler = catchError(
     async (req, res) => {
         const request = emailSchema.parse(req.body);
 
         // call the service
         const sendLinkMessage = await sentResetPasswordEmail(request.email);
-        return res.status(OK).json({ message: sendLinkMessage })
+        return res.status(OK).json(ok(sendLinkMessage))
     }
 )
 
 export const resetPasswordHandler = catchError(
     async (req, res) => {
         const request = resetPasswordSchema.parse(req.body);
-        const  token  = String(req.params.token)
+        const token = String(req.params.token)
 
         appAssert(token, BAD_REQUEST, "Missing reset token");
 
@@ -156,8 +163,6 @@ export const resetPasswordHandler = catchError(
 
         clearAuthCookies(res)
             .status(OK)
-            .json({
-                message: "Password reset successful"
-            });
+            .json(ok("Password reset successful"));
     }
 );
