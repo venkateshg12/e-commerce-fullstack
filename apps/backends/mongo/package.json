@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "worker": "tsx watch src/worker.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
@@ -14,19 +15,24 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@bull-board/api": "^8.1.2",
+    "@bull-board/express": "^8.1.2",
     "@repo/types": "workspace:*",
     "@types/nodemailer": "^8.0.1",
     "bcrypt": "^6.0.0",
+    "bullmq": "^5.80.9",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "crypto": "^1.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "google-auth-library": "^9.15.0",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.0",
     "morgan": "^1.11.0",
     "nodemailer": "^9.0.1",
+    "redis": "^6.1.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
