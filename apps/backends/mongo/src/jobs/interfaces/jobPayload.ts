@@ -4,3 +4,9 @@ export interface VerifyEmailPayload {
   verificationToken: string;
 }
 
+export interface PasswordResetPayload {
+  userId: string;
+  email: string;
+  resetToken: string;
+}
+

@@ -10,7 +10,7 @@ export const emailQueue = new Queue(QUEUE_NAMES.EMAIL, {
             type : 'exponential',
             delay : 3000,
         },
-        removeOnComplete: {age : 24 * 3600, count: 1000},
+        removeOnComplete: {age : 3600, count: 1000},
         removeOnFail : {age: 7 * 24* 3600 , count : 5000},
     },
 });

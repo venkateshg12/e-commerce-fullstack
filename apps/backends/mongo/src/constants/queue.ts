@@ -7,7 +7,6 @@ export const QUEUE_NAMES = {
 export const JOB_NAMES = {
     EMAIL : {
         VERIFY_EMAIL : 'send_verify_email',
-        RESEND_VERIFY_EMAIL : 'resend_verify_email',
         PASSWORD_RESET : 'send_password_reset'
     },
 
