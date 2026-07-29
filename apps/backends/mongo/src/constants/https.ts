@@ -15,7 +15,6 @@ export type HttpStatusCode =
 | typeof BAD_REQUEST
 | typeof UNAUTHORIZED
 | typeof FORBIDDEN
-| typeof FORBIDDEN
 | typeof NOT_FOUND
 | typeof CONFLICT
 | typeof UNPROCESSABLE_CONTENT
