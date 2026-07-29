@@ -1,13 +1,11 @@
-import { OAuth2Client } from "google-auth-library";
+import { LoginTicket, OAuth2Client } from "google-auth-library";
 import UserModel from "../models/user.model";
 import SessionModel from "../models/session.model";
-import { catchError } from "../utils/catchError";
-import appAssert from "../utils/appAssert";
+import { catchError, appAssert } from "../utils/errors";
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK, UNAUTHORIZED } from "../constants/https";
 import { GOOGLE_CLIENT_ID } from "../constants/env";
-import { refreshTokenSignOptions, singToken } from "../utils/jwt";
-import { setAuthCookies } from "../utils/cookies";
-import { ok } from "../utils/apiEnvelope";
+import { refreshTokenSignOptions, singToken, setAuthCookies } from "../utils/auth";
+import { ok } from "../utils/api";
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
@@ -16,7 +14,7 @@ export const googleAuthHandler = catchError(async (req, res) => {
     appAssert(idToken, BAD_REQUEST, "Google ID token is required");
     appAssert(GOOGLE_CLIENT_ID, INTERNAL_SERVER_ERROR, "Google Client ID is not configured on the server");
 
-    let ticket;
+    let ticket: LoginTicket | undefined;
     try {
         ticket = await client.verifyIdToken({
             idToken: idToken,
