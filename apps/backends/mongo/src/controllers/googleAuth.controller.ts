@@ -4,7 +4,7 @@ import SessionModel from "../models/session.model";
 import { catchError, appAssert } from "../utils/errors";
 import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK, UNAUTHORIZED } from "../constants/https";
 import { GOOGLE_CLIENT_ID } from "../constants/env";
-import { refreshTokenSignOptions, singToken, setAuthCookies } from "../utils/auth";
+import { refreshTokenSignOptions, signToken, setAuthCookies } from "../utils/auth";
 import { ok } from "../utils/api";
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -80,14 +80,14 @@ export const googleAuthHandler = catchError(async (req, res) => {
     });
 
     // Sign Access and Refresh tokens
-    const refreshToken = singToken(
+    const refreshToken = signToken(
         {
             sessionId: session._id
         },
         refreshTokenSignOptions
     );
 
-    const accessToken = singToken(
+    const accessToken = signToken(
         {
             userId: user._id,
             role: user.role,

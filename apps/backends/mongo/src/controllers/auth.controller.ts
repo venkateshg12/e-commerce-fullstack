@@ -1,17 +1,14 @@
 import { BAD_REQUEST, CREATED, NOT_FOUND, OK, UNAUTHORIZED } from "../constants/https";
-import { createAccount, loginUser, refreshUserAccessToken, resendVerificationEmail, resetPassword, sentResetPasswordEmail } from "../services.ts/auth.service";
-import { catchError } from "../utils/catchError";
+import { createAccount, loginUser, refreshUserAccessToken, resendVerificationEmail, resetPassword, sentResetPasswordEmail } from "../services/auth.service";
+import { catchError, appAssert } from "../utils/errors";
 import { emailSchema, loginInSchema, registerSchema, resetPasswordSchema } from "@repo/types";
-import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies } from "../utils/cookies";
-import { refreshTokenSignOptions, singToken, verifyToken } from "../utils/jwt";
+import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies, refreshTokenSignOptions, signToken, verifyToken } from "../utils/auth";
 import SessionModel from "../models/session.model";
-import appAssert from "../utils/appAssert";
 import VerificationLinkModel from "../models/verificationLink.model";
 import UserModel from "../models/user.model";
-import { CORS_ORIGIN } from "../constants/env";
 import { VerificationLinkType } from "../constants/verificationLinkType";
 import sessionModel from "../models/session.model";
-import { ok } from "../utils/apiEnvelope";
+import { ok } from "../utils/api";
 
 export const registerHandler = catchError(
     async (req, res) => {
@@ -106,14 +103,14 @@ export const verifyEmailHandler = catchError(
         })
 
         // sign access token & refresh token
-        const refreshToken = singToken(
+        const refreshToken = signToken(
             {
                 sessionId: session._id
             },
             refreshTokenSignOptions
         )
 
-        const accessToken = singToken(
+        const accessToken = signToken(
             {
                 userId: user._id,
                 role: user.role,
@@ -166,3 +163,12 @@ export const resetPasswordHandler = catchError(
             .json(ok("Password reset successful"));
     }
 );
+
+export const getProfileData = catchError(
+    async (req, res) => {
+        const userId = req.userId;
+        const user = await UserModel.findById(userId);
+        appAssert(user !== null, NOT_FOUND, "User not found!");
+        res.status(OK).json(ok({user: user.omitPassword()}));
+    }
+)

@@ -1,8 +1,7 @@
 import z from "zod";
 import { NOT_FOUND, OK } from "../constants/https";
 import SessionModel from "../models/session.model";
-import { catchError } from "../utils/catchError";
-import appAssert from "../utils/appAssert";
+import { catchError, appAssert } from "../utils/errors";
 
 export const getSessionHandler = catchError(
     async (req, res, next) => {
