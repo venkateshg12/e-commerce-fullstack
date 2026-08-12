@@ -1,18 +1,11 @@
-import { Button } from "@/components/ui/button";
-import { useLogout } from "@/hooks/auth/useLogout";
+
 
 
 const HomePage = () => {
-  const { mutate: logout, isPending } = useLogout();
   return (
-    <div>
-      Welcome to home page!
-      <Button
-        onClick={() => logout()}
-        disabled={isPending}
-      >
-        Logout
-      </Button>
+    <div className="p-4 space-y-4">
+      <h1 className="text-2xl font-bold">Welcome to home page!</h1>
+
     </div>
   )
 }
