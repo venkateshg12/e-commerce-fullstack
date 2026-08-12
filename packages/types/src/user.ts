@@ -50,3 +50,18 @@ export const resetPasswordSchema = registerFieldsSchema.pick({
 
 
 export type ResetPasswordSchema = z.infer<typeof resetPasswordSchema>;
+
+export const addressSchema = z.object({
+    fullName: z.string().trim().min(1, { message: "Full name is required" }),
+    address: z.string().trim().min(1, { message: "Address is required" }),
+    state: z.string().trim().min(1, { message: "State is required" }),
+    city: z.string().trim().min(1, { message: "City is required" }),
+    country: z.string().trim().default("India"),
+    postalCode: z.string().trim().min(1, { message: "Postal code is required" }),
+    isDefault: z.boolean().default(false),
+});
+
+export type AddressSchema = z.infer<typeof addressSchema>;
+
+export const updateAddressSchema = addressSchema.partial();
+export type UpdateAddressSchema = z.infer<typeof updateAddressSchema>;
