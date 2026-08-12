@@ -8,6 +8,11 @@ import HomePage from "./pages/user/HomePage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RoleGuardLayout from "./components/layout/RoleGuardLayout";
 import AdminLayout from "./components/layout/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProducts from "./pages/admin/AdminProducts";
+import AdminCoupon from "./pages/admin/AdminCoupon";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminSettings from "./pages/admin/AdminSettings";
 
 
 export const router = createBrowserRouter([
@@ -75,8 +80,24 @@ export const router = createBrowserRouter([
                         children: [
                             {
                                 index: true,
-                                element: <div className="p-4 text-xl">Admin Dashboard Placeholder</div>,
+                                element: <AdminDashboard />,
                             },
+                            {
+                                path: 'products',
+                                element: <AdminProducts />,
+                            },
+                            {
+                                path: 'coupons',
+                                element: <AdminCoupon />
+                            },
+                            {
+                                path: 'orders',
+                                element: <AdminOrders />
+                            },
+                            {
+                                path: 'settings',
+                                element: <AdminSettings />
+                            }
                         ],
                     },
                 ],
