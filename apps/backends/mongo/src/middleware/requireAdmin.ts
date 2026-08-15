@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import appAssert from "../utils/appAssert";
+import { appAssert } from "../utils/errors";
 import { FORBIDDEN } from "../constants/https";
 import { appErrorCode } from "../constants/appErrorCode";
 
