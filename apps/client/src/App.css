@@ -3,134 +3,1324 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/noto-sans";
 @import "@fontsource-variable/inter";
+@import '@fontsource/poppins';
+@import '@fontsource-variable/roboto-slab/wght.css';
+@import '@fontsource-variable/open-sans/wght.css';
+@import '@fontsource-variable/geist/wght.css';
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+
   --font-lato: "Lato", sans-serif;
   --font-ubuntuMono: "Ubuntu Mono", monospace;
+  --font-poppins: 'Poppins', sans-serif;
+  --font-robSlab: 'Roboto Slab Variable', serif;
+  --font-openSans: 'Open Sans Variable', sans-serif;
+  --font-geist: 'Geist Variable', sans-serif;
 }
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Inter Variable', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --font-sans: 'Inter Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.141 0.005 285.823);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.141 0.005 285.823);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.141 0.005 285.823);
-    --primary: oklch(0.518 0.253 323.949);
-    --primary-foreground: oklch(0.977 0.017 320.058);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.967 0.001 286.375);
-    --muted-foreground: oklch(0.552 0.016 285.938);
-    --accent: oklch(0.967 0.001 286.375);
-    --accent-foreground: oklch(0.21 0.006 285.885);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.92 0.004 286.32);
-    --input: oklch(0.92 0.004 286.32);
-    --ring: oklch(0.705 0.015 286.067);
-    --chart-1: oklch(0.833 0.145 321.434);
-    --chart-2: oklch(0.667 0.295 322.15);
-    --chart-3: oklch(0.591 0.293 322.896);
-    --chart-4: oklch(0.518 0.253 323.949);
-    --chart-5: oklch(0.452 0.211 324.591);
-    --radius: 0.75rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.141 0.005 285.823);
-    --sidebar-primary: oklch(0.591 0.293 322.896);
-    --sidebar-primary-foreground: oklch(0.977 0.017 320.058);
-    --sidebar-accent: oklch(0.967 0.001 286.375);
-    --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-    --sidebar-border: oklch(0.92 0.004 286.32);
-    --sidebar-ring: oklch(0.705 0.015 286.067);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.518 0.253 323.949);
+  --primary-foreground: oklch(0.977 0.017 320.058);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.705 0.015 286.067);
+  --chart-1: oklch(0.833 0.145 321.434);
+  --chart-2: oklch(0.667 0.295 322.15);
+  --chart-3: oklch(0.591 0.293 322.896);
+  --chart-4: oklch(0.518 0.253 323.949);
+  --chart-5: oklch(0.452 0.211 324.591);
+  --radius: 0.75rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.591 0.293 322.896);
+  --sidebar-primary-foreground: oklch(0.977 0.017 320.058);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
+  --scrollbar-track: oklch(0.98 0.001 286.375);
+  --scrollbar-thumb: oklch(0.87 0.004 286.32);
+  --scrollbar-thumb-hover: oklch(0.75 0.008 286.32);
 }
 
 .dark {
-    --background: oklch(0.141 0.005 285.823);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.21 0.006 285.885);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.21 0.006 285.885);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.452 0.211 324.591);
-    --primary-foreground: oklch(0.977 0.017 320.058);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    --muted-foreground: oklch(0.705 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.552 0.016 285.938);
-    --chart-1: oklch(0.833 0.145 321.434);
-    --chart-2: oklch(0.667 0.295 322.15);
-    --chart-3: oklch(0.591 0.293 322.896);
-    --chart-4: oklch(0.518 0.253 323.949);
-    --chart-5: oklch(0.452 0.211 324.591);
-    --sidebar: oklch(0.21 0.006 285.885);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.667 0.295 322.15);
-    --sidebar-primary-foreground: oklch(0.977 0.017 320.058);
-    --sidebar-accent: oklch(0.274 0.006 286.033);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.552 0.016 285.938);
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.452 0.211 324.591);
+  --primary-foreground: oklch(0.977 0.017 320.058);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  --chart-1: oklch(0.833 0.145 321.434);
+  --chart-2: oklch(0.667 0.295 322.15);
+  --chart-3: oklch(0.591 0.293 322.896);
+  --chart-4: oklch(0.518 0.253 323.949);
+  --chart-5: oklch(0.452 0.211 324.591);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.667 0.295 322.15);
+  --sidebar-primary-foreground: oklch(0.977 0.017 320.058);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --scrollbar-track: oklch(0.19 0.005 285.823);
+  --scrollbar-thumb: oklch(0.32 0.006 286.033);
+  --scrollbar-thumb-hover: oklch(0.44 0.008 286.033);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
+
   body {
     @apply bg-background text-foreground;
-    }
+  }
+
   html {
     @apply font-sans;
+    /*
+     * Keep the scrollbar gutter permanently, even on pages short enough not to need one.
+     * Radix (Select, Dialog, Sheet) locks body scroll while an overlay is open, which
+     * removes the scrollbar; with a reserved gutter that removal no longer resizes the page.
+     */
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+
+  /*
+   * react-remove-scroll-bar (used by every Radix overlay) offsets the body by the width of
+   * the scrollbar it just removed, to stop content jumping. The gutter above already holds
+   * that space open, so its compensation is double-counting and shifts the whole page
+   * sideways on open. Cancel it: opening or closing a dropdown now moves nothing.
+   *
+   * The `html` prefix is load-bearing. Radix injects its rule into a <style> appended to
+   * <head> at runtime, so it sits after this file; with identical selectors and !important
+   * on both sides, theirs would win on document order. The extra element raises specificity
+   * so this wins regardless.
+   */
+  html body[data-scroll-locked] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /*
+   * Custom scrollbars.
+   *
+   * WebKit/Blink gets the pseudo-elements below, which allow a rounded thumb inset from the
+   * track. Firefox only understands the standard `scrollbar-*` properties, and those are
+   * deliberately scoped to Firefox: Chrome 121+ also supports them, but setting
+   * `scrollbar-color` there makes it IGNORE every ::-webkit-scrollbar rule, which would
+   * throw away the rounded thumb.
+   */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border: 3px solid var(--scrollbar-track);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+
+  /* Stops the little grey square where two scrollbars meet. */
+  ::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+  }
+
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
     }
+  }
+}
+
+@keyframes gallery-fade {
+  from {
+    opacity: 0;
+    transform: scale(1.02);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes loader {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+  }
+
+  50% {
+    transform: translateX(0%) scaleX(1);
+  }
+
+  100% {
+    transform: translateX(100%) scaleX(0.2);
+  }
+}
+
+
+@layer components {
+  .shell {
+    @apply mx-auto flex h-[62px] max-w-[1600px] items-center gap-3 px-1 sm:px-2 lg:px-8;
+  }
+
+  .header-class {
+    @apply sticky top-0 z-50 border-b border-border/70 bg-secondary/60 backdrop-blur-xl;
+  }
+
+  .text-link {
+    @apply inline-flex h-10 items-center gap-2 rounded-xl px-3 text-[15px] font-medium text-foreground/90 transition hover:bg-white/5 hover:text-foreground;
+  }
+
+  .icon-link {
+    @apply relative inline-flex h-10 w-10 items-center justify-center rounded-xl text-foreground/90 transition hover:bg-white/5 hover:text-foreground;
+  }
+
+  .desktop-collections-wrap {
+    @apply ml-6 hidden lg:block;
+  }
+
+  .desktop-nav {
+    @apply ml-auto hidden items-center gap-1 lg:flex;
+  }
+
+  .dropdown-button {
+    @apply h-10 rounded-xl px-3 text-[15px] font-medium text-foreground/90 hover:bg-white/5 hover:text-foreground;
+  }
+
+
+  .dropdown-content {
+    @apply mt-3 rounded-2xl border-border bg-popover/95 p-2 backdrop-blur;
+  }
+
+
+  .dropdown-item-link {
+    @apply flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5;
+  }
+
+  .cart-badge {
+    @apply absolute -right-1 -top-1 inline-flex min-w-1 items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold leading-5 text-black;
+  }
+
+  .wishlist-badge {
+    @apply absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold leading-5 text-black;
+  }
+
+  .mobile-wrap {
+    @apply ml-auto flex items-center gap-1 lg:hidden;
+  }
+
+  .menu-button {
+    @apply h-11 w-11 rounded-xl border border-white/10 bg-white/5 text-foreground hover:bg-white/10;
+  }
+
+  .sheet-content {
+    @apply w-[380px] max-w-[92vw] border-l border-border bg-background p-0 sm:w-[460px];
+  }
+
+  .brand-wrap {
+    @apply flex items-start;
+  }
+
+  .brand-title {
+    @apply text-[25px] font-semibold tracking-[-0.02em] text-foreground;
+  }
+
+  .brand-block {
+    @apply px-5 py-6 sm:px-6;
+  }
+
+  .drawer-section {
+    @apply space-y-3 px-5 py-5 sm:px-6;
+  }
+
+  .drawer-title {
+    @apply text-sm font-semibold tracking-wide text-muted-foreground;
+  }
+
+  .drawer-items-wrap {
+    @apply space-y-1;
+  }
+
+  .drawer-item-link {
+    @apply flex items-center gap-3 rounded-xl px-3 py-3 text-[18px] font-medium text-foreground transition hover:bg-white/5;
+  }
+
+  .sidebar-root {
+    @apply hidden w-[300px] shrink-0 border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col;
+  }
+
+  .brand-row {
+    @apply flex h-[72px] items-center border-b border-sidebar-border px-5;
+  }
+
+  .nav-wrap {
+    @apply space-y-2;
+  }
+
+  .nav-item-base {
+    @apply flex h-11 items-center gap-3 px-4 text-[15px] font-medium transition-colors;
+  }
+
+  .nav-item-desktop {
+    @apply rounded-none;
+  }
+
+  .nav-item-mobile {
+    @apply flex h-11 items-center gap-3 px-4 text-[15px] font-medium transition-colors;
+  }
+
+  .active-item {
+    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+  }
+
+  .idle-item {
+    @apply text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground;
+  }
+
+
+
+  .page-wrap {
+    @apply space-y-6 p-6;
+  }
+
+  .card-class {
+    @apply border border-border bg-card shadow-sm;
+  }
+
+  .card-header-class {
+    @apply space-y-4;
+  }
+
+  .card-title-class {
+    @apply text-xl;
+  }
+
+  .card-content-class {
+    @apply space-y-4;
+  }
+
+  .error-message-class {
+    @apply rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive;
+  }
+
+
+
+  .dialog-content-class {
+    @apply sm:max-w-xl;
+  }
+
+  .content-wrap {
+    @apply space-y-4;
+  }
+
+  .form-row {
+    @apply flex gap-3;
+  }
+
+  .category-list {
+    @apply space-y-2;
+  }
+
+  .category-row {
+    @apply flex items-center justify-between rounded-lg border border-black/30 bg-card px-3 py-1;
+  }
+
+  .category-info {
+    @apply flex items-center gap-2;
+  }
+
+  .category-icon {
+    @apply h-4 w-4 text-muted-foreground;
+  }
+
+  .category-name {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .empty-state-class {
+    @apply rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground;
+  }
+
+  .edit-button-class {
+    @apply h-4 w-4;
+  }
+
+
+
+  .dialog-content-class {
+    @apply max-h-[92vh] overflow-y-auto sm:max-w-4xl;
+  }
+
+  .content-wrap-class {
+    @apply grid gap-6;
+  }
+
+  .two-column-grid-class {
+    @apply grid gap-4 md:grid-cols-2;
+  }
+
+  .three-column-grid-class {
+    @apply grid gap-4 md:grid-cols-3;
+  }
+
+  .field-group-class {
+    @apply space-y-2;
+  }
+
+  .section-grid-class {
+    @apply grid gap-6 md:grid-cols-2;
+  }
+
+  .actions-row-class {
+    @apply flex justify-end gap-3;
+  }
+
+
+  .wrapper-class {
+    @apply space-y-4;
+  }
+
+  .header-class {
+    @apply space-y-1;
+  }
+
+  .title-class {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .description-class {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .upload-label-class {
+    @apply flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 px-4 py-6 text-center transition hover:bg-muted;
+  }
+
+  .upload-icon-class {
+    @apply mb-2 h-5 w-5 text-muted-foreground;
+  }
+
+  .upload-title-class {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .upload-subtitle-class {
+    @apply mt-1 text-xs text-muted-foreground;
+  }
+
+  .hidden-input-class {
+    @apply hidden;
+  }
+
+  .section-class {
+    @apply space-y-2;
+  }
+
+  .section-title-class {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .grid-class {
+    @apply grid grid-cols-2 gap-3 md:grid-cols-4;
+  }
+
+  .image-card-class {
+    @apply overflow-hidden rounded-xl border border-border bg-card;
+  }
+
+  .image-class {
+    @apply h-28 w-full object-cover;
+  }
+
+  .image-actions-class {
+    @apply flex items-center justify-between gap-2 p-2;
+  }
+
+  .star-icon-class {
+    @apply mr-1 h-3.5 w-3.5;
+  }
+
+  .remove-icon-class {
+    @apply h-4 w-4;
+  }
+
+  .file-name-class {
+    @apply p-2 text-xs text-muted-foreground;
+  }
+
+
+
+
+  .wrapper-class {
+    @apply overflow-x-auto rounded-xl border border-border;
+  }
+
+  .table-header-class {
+    @apply bg-muted/50;
+  }
+
+  .image-header-class {
+    @apply w-[90px];
+  }
+
+  .edit-header-class {
+    @apply w-[80px] text-right;
+  }
+
+  .state-cell-class {
+    @apply h-28 text-center text-muted-foreground;
+  }
+
+  .image-box-class {
+    @apply h-14 w-14 overflow-hidden rounded-lg border border-border bg-muted;
+  }
+
+  .image-class {
+    @apply h-full w-full object-cover;
+  }
+
+  .title-wrap-class {
+    @apply space-y-1;
+  }
+
+  .title-class {
+    @apply font-medium text-foreground;
+  }
+
+  .description-class {
+    @apply line-clamp-1 text-xs text-muted-foreground;
+  }
+
+  .edit-cell-class {
+    @apply flex justify-end;
+  }
+
+  .edit-icon-class {
+    @apply h-4 w-4;
+  }
+
+
+
+
+  .page-wrap-class {
+    @apply space-y-6 p-6;
+  }
+
+  .card-class {
+    @apply border border-border bg-card shadow-sm;
+  }
+
+  .card-header-class {
+    @apply space-y-4;
+  }
+
+  .card-title-class {
+    @apply text-xl;
+  }
+
+  .card-content-class {
+    @apply space-y-4;
+  }
+
+  .error-class {
+    @apply rounded-none border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive;
+  }
+
+
+
+  .wrap-class {
+    @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .search-wrap-class {
+    @apply relative w-full max-w-sm flex items-center;
+  }
+
+  .search-icon-class {
+    @apply pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10;
+  }
+
+  .search-input-class {
+    @apply pl-10;
+  }
+
+  .add-button-class {
+    @apply cursor-pointer;
+  }
+
+  .add-button-icon-class {
+    @apply mr-2 h-4 w-4;
+  }
+
+
+
+
+  .page-wrap-class {
+    @apply min-h-screen bg-background;
+  }
+
+  .content-container-class {
+    @apply mx-auto max-w-7xl px-4 py-8;
+  }
+
+  .upload-panel-class {
+    @apply grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)];
+  }
+
+  .card-class {
+    @apply border-border/60 bg-card/80;
+  }
+
+  .card-title-class {
+    @apply text-2xl font-semibold text-foreground;
+  }
+
+  .card-content-class {
+    @apply space-y-6;
+  }
+
+  .upload-box-class {
+    @apply flex min-h-[220px] flex-col items-center justify-center gap-4 border border-dashed border-border bg-background/40 p-6 text-center;
+  }
+
+  .upload-icon-wrap-class {
+    @apply flex h-14 w-14 items-center justify-center border border-border bg-secondary/50;
+  }
+
+  .upload-icon-class {
+    @apply h-6 w-6 text-primary;
+  }
+
+  .upload-text-wrap-class {
+    @apply space-y-2;
+  }
+
+  .upload-heading-class {
+    @apply text-base font-medium text-foreground;
+  }
+
+  .upload-subtext-class {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .file-input-class {
+    @apply rounded-none;
+  }
+
+  .file-count-class {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .full-button-class {
+    @apply w-full rounded-none;
+  }
+
+  .button-class {
+    @apply rounded-none;
+  }
+
+  .error-box-class {
+    @apply border border-destructive/30 bg-destructive/10 p-4 text-sm text-foreground;
+  }
+
+  .empty-state-class {
+    @apply border border-border bg-background/40 p-6 text-sm text-muted-foreground;
+  }
+
+  .table-header-class {
+    @apply flex flex-row items-center justify-between gap-3;
+  }
+
+  .table-wrap-class {
+    @apply overflow-x-auto;
+  }
+
+  .preview-wrap-class {
+    @apply h-16 w-28 overflow-hidden border border-border bg-muted;
+  }
+
+  .public-id-text-class {
+    @apply max-w-[360px] truncate text-sm text-muted-foreground;
+  }
+
+  .selected-files-list-class {
+    @apply flex flex-col gap-2 w-full max-h-52 overflow-y-auto pr-1;
+  }
+
+  .selected-file-item-class {
+    @apply flex items-center justify-between gap-2 border border-border bg-card/60 p-2 text-left text-xs;
+  }
+
+  .selected-file-info-class {
+    @apply flex items-center gap-2 min-w-0 flex-1;
+  }
+
+  .selected-file-preview-class {
+    @apply h-8 w-12 shrink-0 overflow-hidden border border-border bg-muted;
+  }
+
+  .selected-file-name-class {
+    @apply truncate font-medium text-foreground;
+  }
+
+  .selected-file-size-class {
+    @apply shrink-0 text-muted-foreground text-[10px];
+  }
+
+  .file-remove-button-class {
+    @apply shrink-0 p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-sm transition-colors cursor-pointer;
+  }
+
+  .collections-page-wrap {
+    @apply min-h-screen bg-background;
+  }
+
+  .hero-section {
+    @apply border-b border-border/60 bg-gradient-to-b from-primary/10 via-background to-background;
+  }
+
+  .hero-container {
+    @apply mx-auto max-w-7xl px-4 py-10;
+  }
+
+  .hero-eyebrow {
+    @apply text-sm uppercase tracking-[0.2em] text-primary;
+  }
+
+  .hero-content {
+    @apply mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between;
+  }
+
+  .hero-title-wrap {
+    @apply space-y-2;
+  }
+
+  .hero-title {
+    @apply text-3xl font-semibold tracking-tight text-foreground md:text-4xl;
+  }
+
+  .sort-wrap {
+    @apply flex items-center gap-3 text-sm text-muted-foreground;
+  }
+
+  .sort-trigger {
+    @apply h-9.5 w-[190px] cursor-pointer rounded-lg border border-border bg-card px-3 text-sm font-medium text-foreground shadow-xs transition-colors hover:bg-accent/40 hover:text-foreground;
+  }
+
+  .content-container {
+    @apply mx-auto max-w-7xl px-4 py-2;
+  }
+
+  .top-bar {
+    @apply mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between;
+  }
+
+  /* No badges and no Sheet button at md+ leaves the row empty — don't reserve space for it. */
+  .top-bar-flush {
+    @apply md:mb-0;
+  }
+
+  .active-badges-wrap {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .active-badge {
+    @apply border-border bg-secondary text-secondary-foreground hover:bg-secondary;
+  }
+
+  /* Phone-only: from md up the filters live in the sticky rail instead. */
+  .top-bar-actions {
+    @apply flex items-center gap-3 md:hidden;
+  }
+
+  .mobile-filter-button {
+    @apply rounded-none md:hidden;
+  }
+
+  .mobile-filter-icon {
+    @apply mr-2 h-4 w-4;
+  }
+
+  .mobile-sheet-content {
+    @apply w-full max-w-sm border-border bg-background;
+  }
+
+  .mobile-sheet-header {
+    @apply sr-only;
+  }
+
+  /* md:items-start keeps the row from stretching the rail, which would defeat the sticky. */
+  .layout-grid {
+    @apply grid gap-6 md:grid-cols-[220px_minmax(0,1fr)] md:items-start lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8;
+  }
+
+  /*
+   * The rail is pinned under the 62px sticky header (.header-class + .shell) and sized to the
+   * rest of the viewport, so it spans full height and scrolls on its own.
+   * NOTE: any ancestor with an overflow other than visible silently kills position:sticky.
+   */
+  .desktop-aside {
+    @apply hidden md:sticky md:top-[70px] md:block md:h-[calc(100vh-78px)];
+  }
+
+  /* Scrolling lives on the card so its border frames the scrolling interior. */
+  .desktop-filter-card {
+    @apply h-full overflow-y-auto overscroll-contain rounded-none border border-border/60 bg-card/80 p-5;
+  }
+
+  /*
+   * Narrower, quieter bar for scroll areas nested inside the page — the track disappears and
+   * the thumb floats, so a 12px bar doesn't dominate a 220px rail.
+   * `.scrollbar-slim` is reusable; add it to any inner scroll container.
+   */
+  .scrollbar-slim::-webkit-scrollbar,
+  .desktop-filter-card::-webkit-scrollbar,
+  .pdp-related-rail::-webkit-scrollbar,
+  .gallery-thumbs::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-slim::-webkit-scrollbar-track,
+  .desktop-filter-card::-webkit-scrollbar-track,
+  .pdp-related-rail::-webkit-scrollbar-track,
+  .gallery-thumbs::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-slim::-webkit-scrollbar-thumb,
+  .desktop-filter-card::-webkit-scrollbar-thumb,
+  .pdp-related-rail::-webkit-scrollbar-thumb,
+  .gallery-thumbs::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  .product-section {
+    @apply space-y-6;
+  }
+
+  .action-button {
+    @apply rounded-none;
+  }
+
+  .empty-card {
+    @apply border-border/60 bg-card/80;
+  }
+
+  .empty-card-content {
+    @apply flex min-h-60 flex-col items-center justify-center gap-4 p-6 text-center;
+  }
+
+  .empty-title {
+    @apply text-xl font-semibold text-foreground;
+  }
+
+  .product-grid {
+    @apply grid gap-5 sm:grid-cols-2 xl:grid-cols-3;
+  }
+
+  /*
+   * In-flight filter change: the visible cards are the PREVIOUS filter's results, so block
+   * clicks for the moment they are stale rather than navigating to the wrong product.
+   */
+  .product-grid-busy {
+    @apply pointer-events-none opacity-60 transition-opacity duration-200;
+  }
+
+  .product-skeleton-media {
+    @apply h-full w-full rounded-none;
+  }
+
+  .product-skeleton-brand {
+    @apply h-3 w-16 rounded-none;
+  }
+
+  .product-skeleton-title {
+    @apply h-4 w-full rounded-none;
+  }
+
+  .product-skeleton-title-short {
+    @apply h-4 w-3/5 rounded-none;
+  }
+
+  .product-skeleton-price {
+    @apply h-5 w-24 rounded-none;
+  }
+
+  /* Customer filters panel */
+  /* p-5 is the Sheet's inner padding; inside the rail the card already pads, so reset at md. */
+  .filters-panel {
+    @apply space-y-6 p-5 md:p-0;
+  }
+
+  .filters-panel-header {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  /*
+   * Inside the mobile Sheet the built-in close button is absolutely positioned at top-3
+   * right-3, which lands on top of "Clear all". Reserve room for it here only — the desktop
+   * rail has no close button and must not inherit the gap.
+   */
+  .mobile-sheet-content .filters-panel-header {
+    @apply pr-9;
+  }
+
+  .filters-panel-title {
+    @apply text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground;
+  }
+
+  .filters-clear-button {
+    @apply h-auto rounded-none p-0 text-xs text-primary hover:bg-transparent hover:underline;
+  }
+
+  .facet-group {
+    @apply space-y-3;
+  }
+
+  .facet-group-title {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .facet-options-wrap {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .facet-option {
+    @apply cursor-pointer border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:border-primary/60 hover:text-foreground;
+  }
+
+  .facet-option-active {
+    @apply border-primary bg-primary text-primary-foreground hover:text-primary-foreground;
+  }
+
+  .facet-empty {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .facet-swatches-wrap {
+    @apply flex flex-wrap gap-2.5;
+  }
+
+  /*
+   * Colour-only circles: no label, so the border is what keeps a white/cream swatch
+   * visible against the card, and the ring marks the selected one.
+   */
+  .facet-swatch {
+    @apply h-7 w-7 cursor-pointer rounded-full border border-border transition hover:scale-110;
+  }
+
+  .facet-swatch-active {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  /* Customer product card */
+  .product-card {
+    @apply flex h-full flex-col overflow-hidden rounded-none border-border/60 bg-card/80 p-0 transition hover:border-primary/50 hover:shadow-md;
+  }
+
+  .product-card-media {
+    @apply relative aspect-4/5 w-full -mt-5 overflow-hidden bg-muted;
+  }
+
+  .product-card-image {
+    @apply h-full w-full object-cover transition duration-500;
+  }
+
+  .product-card:hover .product-card-image {
+    @apply scale-105;
+  }
+
+  .product-card-image-fallback {
+    @apply flex h-full w-full items-center justify-center text-muted-foreground;
+  }
+
+  .product-card-sale-badge {
+    @apply absolute left-3 top-3 rounded-none bg-primary text-primary-foreground;
+  }
+
+  .product-card-body {
+    @apply flex flex-1 flex-col gap-2 p-4;
+  }
+
+  .product-card-brand {
+    @apply text-xs uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  .product-card-title {
+    @apply line-clamp-2 text-sm font-medium text-foreground;
+  }
+
+  .product-card-colors {
+    @apply flex items-center gap-1.5 pt-0.5;
+  }
+
+  .product-card-color-dot {
+    @apply h-4 w-4 shrink-0 rounded-full border border-border shadow-xs;
+  }
+
+  .product-card-color-more {
+    @apply text-[11px] font-medium leading-none text-muted-foreground;
+  }
+
+  .product-card-price-row {
+    @apply mt-auto flex items-baseline gap-2 pt-2;
+  }
+
+  .product-card-price {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .product-card-original-price {
+    @apply text-sm text-muted-foreground line-through;
+  }
+
+  .product-card-out-of-stock {
+    @apply text-xs font-medium text-destructive;
+  }
+
+  /* ---------- Product details page (/collections/:id) ---------- */
+
+  .pdp-wrap {
+    @apply min-h-screen bg-gradient-to-b from-primary/5 via-background to-background;
+  }
+
+  .pdp-container {
+    @apply mx-auto flex max-w-7xl flex-col gap-8 px-4 py-6 lg:py-10;
+  }
+
+  .pdp-topbar {
+    @apply flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .pdp-back-button {
+    @apply h-9 rounded-full px-3 text-sm text-muted-foreground hover:text-foreground;
+  }
+
+  .pdp-breadcrumb {
+    @apply flex items-center gap-2 text-xs uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  .pdp-breadcrumb-link {
+    @apply transition hover:text-foreground;
+  }
+
+  .pdp-breadcrumb-divider {
+    @apply text-border;
+  }
+
+  /* Gallery left, sticky buy column right — the column stops sticking on small screens. */
+  .pdp-layout {
+    @apply grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10;
+  }
+
+  .pdp-gallery-col {
+    @apply relative;
+  }
+
+  .pdp-gallery-actions {
+    @apply absolute right-4 top-4 z-10 flex flex-col gap-2;
+  }
+
+  .gallery-wrap {
+    @apply flex flex-col-reverse gap-3 sm:flex-row;
+  }
+
+  .gallery-thumbs {
+    @apply flex shrink-0 flex-row gap-3 overflow-x-auto sm:max-h-[560px] sm:flex-col sm:overflow-y-auto;
+  }
+
+  .gallery-thumb {
+    @apply size-16 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-border bg-muted transition hover:border-primary/60 sm:size-20;
+  }
+
+  .gallery-thumb-active {
+    @apply border-primary ring-2 ring-primary/30;
+  }
+
+  .gallery-thumb-image {
+    @apply size-full object-cover;
+  }
+
+  .gallery-stage {
+    @apply flex aspect-4/5 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted sm:aspect-square lg:aspect-4/5;
+  }
+
+  /* Keyed on the image URL in the component, so swapping colour re-runs this fade. */
+  .gallery-stage-image {
+    @apply size-full object-cover;
+    animation: gallery-fade 250ms ease-out;
+  }
+
+  .gallery-empty {
+    @apply text-muted-foreground;
+  }
+
+  .pdp-info {
+    @apply flex flex-col gap-4 lg:sticky lg:top-[78px];
+  }
+
+  .pdp-card {
+    @apply flex flex-col gap-4 rounded-2xl border-border/60 bg-card/90 p-5 shadow-sm;
+  }
+
+  .pdp-heading {
+    @apply flex flex-col gap-1;
+  }
+
+  .pdp-brand {
+    @apply text-xs uppercase tracking-[0.18em] text-muted-foreground;
+  }
+
+  .pdp-title {
+    @apply text-2xl font-semibold leading-snug tracking-tight text-foreground md:text-3xl;
+  }
+
+  .pdp-price-row {
+    @apply flex flex-wrap items-baseline gap-3;
+  }
+
+  .pdp-price {
+    @apply text-3xl font-bold tracking-tight text-foreground;
+  }
+
+  .pdp-price-original {
+    @apply text-base text-muted-foreground line-through;
+  }
+
+  .pdp-sale-badge {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .pdp-option-group {
+    @apply flex flex-col gap-3;
+  }
+
+  .pdp-option-label {
+    @apply flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground;
+  }
+
+  .pdp-option-value {
+    @apply normal-case tracking-normal text-foreground;
+  }
+
+  .pdp-swatches {
+    @apply flex flex-wrap gap-3;
+  }
+
+  .pdp-swatch {
+    @apply size-9 cursor-pointer rounded-full border border-border transition hover:scale-110;
+  }
+
+  .pdp-swatch-active {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-card;
+  }
+
+  .pdp-sizes {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .pdp-size {
+    @apply flex min-w-12 cursor-pointer items-center justify-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground transition hover:border-primary/60 hover:text-foreground;
+  }
+
+  .pdp-size-active {
+    @apply border-primary bg-primary text-primary-foreground hover:text-primary-foreground;
+  }
+
+  .pdp-stock-row {
+    @apply text-sm;
+  }
+
+  .pdp-stock-in {
+    @apply inline-flex items-center gap-1.5 font-medium text-emerald-600;
+  }
+
+  .pdp-stock-icon {
+    @apply size-4;
+  }
+
+  .pdp-stock-out {
+    @apply font-medium text-destructive;
+  }
+
+  .pdp-actions {
+    @apply grid gap-3 sm:grid-cols-2;
+  }
+
+  .pdp-action-secondary {
+    @apply h-12 cursor-pointer rounded-full text-sm font-semibold;
+  }
+
+  .pdp-action-primary {
+    @apply h-12 cursor-pointer rounded-full text-sm font-semibold;
+  }
+
+  .pdp-shipping {
+    @apply flex items-center gap-2 text-xs text-muted-foreground;
+  }
+
+  .pdp-shipping-icon {
+    @apply size-4;
+  }
+
+  .pdp-section-title {
+    @apply text-lg font-semibold tracking-tight text-foreground;
+  }
+
+  .pdp-specs {
+    @apply grid grid-cols-2 gap-x-6 gap-y-4;
+  }
+
+  .pdp-spec {
+    @apply flex flex-col gap-0.5;
+  }
+
+  .pdp-spec-label {
+    @apply text-xs uppercase tracking-[0.12em] text-muted-foreground;
+  }
+
+  .pdp-spec-value {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  .pdp-description {
+    @apply text-sm leading-relaxed text-muted-foreground;
+  }
+
+  .pdp-related {
+    @apply flex flex-col gap-4;
+  }
+
+  .pdp-related-head {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .pdp-related-link {
+    @apply text-sm font-medium text-primary transition hover:underline;
+  }
+
+  /* Horizontal rail so "See more" scrolls sideways like the reference, not a wrapped grid. */
+  .pdp-related-rail {
+    @apply flex gap-4 overflow-x-auto pb-3;
+  }
+
+  .pdp-related-item {
+    @apply w-56 shrink-0 sm:w-64;
+  }
+
+  .pdp-missing {
+    @apply flex flex-col items-center justify-center gap-3 rounded-2xl border-border/60 p-12 text-center;
+  }
+
+  .pdp-missing-text {
+    @apply max-w-sm text-sm text-muted-foreground;
+  }
+
+  .pdp-skeleton-gallery {
+    @apply aspect-4/5 w-full rounded-2xl;
+  }
+
+  .pdp-skeleton-block {
+    @apply h-40 w-full rounded-2xl;
+  }
+
+  /* Common loader */
+  .common-loader-wrap {
+    @apply flex min-h-[60vh] w-full flex-col items-center justify-center gap-4;
+  }
+
+  .common-loader-spinner {
+    @apply h-10 w-10 animate-spin rounded-full border-2 border-border border-t-primary;
+  }
+
+  .common-loader-label {
+    @apply text-sm text-muted-foreground;
+  }
+  
 }
