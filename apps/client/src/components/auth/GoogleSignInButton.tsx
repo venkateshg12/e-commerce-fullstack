@@ -22,6 +22,9 @@ function initializeGoogleSignIn(
     client_id: GOOGLE_CLIENT_ID,
     callback: onCredential,
     auto_select: false,
+    error_callback: (error: any) => {
+      console.error("[Google Identity Services Error]:", error);
+    },
   });
 
   window.google!.accounts.id.renderButton(buttonContainer, {
