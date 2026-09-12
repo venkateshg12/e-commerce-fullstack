@@ -1,6 +1,10 @@
 import { Job, Worker } from "bullmq";
 import { JOB_NAMES, QUEUE_NAMES } from "../../constants/queue";
-import { processBannerImagesJob, processProductImagesJob } from "../processors/image.processor";
+import {
+  deleteCloudinaryAssetsJob,
+  processBannerImagesJob,
+  processProductImagesJob,
+} from "../processors/image.processor";
 import { redisConnection } from "../redis/connection";
 
 export const imageWorker = new Worker(
@@ -11,6 +15,8 @@ export const imageWorker = new Worker(
         return await processProductImagesJob(job);
       case JOB_NAMES.IMAGE.PROCESS_BANNER_IMAGES:
         return await processBannerImagesJob(job);
+      case JOB_NAMES.IMAGE.DELETE_CLOUDINARY_ASSETS:
+        return await deleteCloudinaryAssetsJob(job);
       default:
         throw new Error(`Unknown job name: ${job.name}`);
     }
