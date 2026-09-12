@@ -10,6 +10,8 @@ import {
     deleteProductImagesHandler,
     changeProductCoverHandler,
     deleteProductHandler,
+    getProductFacetsHandler,
+    setProductImageColorHandler,
     productCategoryHandler,
     searchProductByIdHandler,
     searchProductHandler,
@@ -23,6 +25,7 @@ productRoutes.post("/admin/products", authenticate, requireAdmin, createProductH
 productRoutes.post("/admin/products/:id/images", authenticate, requireAdmin, upload.array("images"), uploadProductImagesHandler);
 productRoutes.delete("/admin/products/:id/images", authenticate, requireAdmin, deleteProductImagesHandler);
 productRoutes.patch("/admin/products/:id/images/cover", authenticate, requireAdmin, changeProductCoverHandler);
+productRoutes.patch("/admin/products/:id/images/color", authenticate, requireAdmin, setProductImageColorHandler);
 productRoutes.patch("/admin/products/:id", authenticate, requireAdmin, updateProductMetadataHandler);
 productRoutes.delete("/admin/products/:id", authenticate, requireAdmin, deleteProductHandler);
 
@@ -35,6 +38,9 @@ productRoutes.put("/admin/categories/:id", authenticate, requireAdmin, updatePro
 // so inactive products stay hidden.
 productRoutes.get("/categories", productCategoryHandler);
 
+// Must come before "/products/:id" — Express matches route order, and ":id" would otherwise
+// swallow this as id="facets".
+productRoutes.get("/products/facets", getProductFacetsHandler);
 productRoutes.get("/products", searchProductHandler);
 productRoutes.get("/products/:id", searchProductByIdHandler);
 
