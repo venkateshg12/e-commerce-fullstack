@@ -9,8 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Loader2, X, Lightbulb, Mail, SendHorizontal, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useMountEffect } from "@/hooks/useMountEffect";
 import { cn } from "@/lib/utils";
-import { LoadingDots } from "@/constants/constant";
-import type { FailureResponse, SuccessResponse, VerifiedResponse } from "@/lib/types";
+import { LoadingDots } from "@/components/ui/loading-dots";
+import type { FailureResponse, SuccessResponse, VerifiedResponse } from "@/types";
 
 
 export default function VerifyEmail() {

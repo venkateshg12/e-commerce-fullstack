@@ -6,8 +6,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForgotPassword } from "@/hooks/auth/useForgotPassword";
 import { AlertPopup } from "@/components/ui/alert-popup";
-import { LoadingDots } from "@/constants/constant";
-import type { AlertType } from "@/lib/types";
+import { LoadingDots } from "@/components/ui/loading-dots";
+import type { AlertType } from "@/types";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();

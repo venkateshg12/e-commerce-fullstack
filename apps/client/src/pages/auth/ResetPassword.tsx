@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, CheckCircle2, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { useResetPassword } from "@/hooks/auth/useResetPassword";
-import { LoadingDots } from "@/constants/constant";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 export default function ResetPassword() {
     const { token } = useParams<{ token: string }>();
