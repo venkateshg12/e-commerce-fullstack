@@ -30,9 +30,10 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
         setAlertPopup,
         isPending,
         updateFormField,
-        toggleSizes,
+        updateNumberField,
         addColor,
         removeColor,
+        toggleSizes,
         localFiles,
         setLocalFiles,
         submit,
@@ -146,7 +147,7 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
                                 placeholder="0"
                                 min="0"
                                 value={form.price}
-                                onChange={(e) => updateFormField("price", Number(e.target.value))}
+                                onChange={(e) => updateNumberField("price", e.target.value)}
                                 className="font-poppins"
                             />
                         </div>
@@ -158,7 +159,7 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
                                 min="0"
                                 max="100"
                                 value={form.salesPercentage}
-                                onChange={(e) => updateFormField("salesPercentage", Number(e.target.value))}
+                                onChange={(e) => updateNumberField("salesPercentage", e.target.value)}
                                 className="font-poppins"
                             />
                         </div>
@@ -169,7 +170,7 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
                                 placeholder="0"
                                 min="0"
                                 value={form.stock}
-                                onChange={(e) => updateFormField("stock", Number(e.target.value))}
+                                onChange={(e) => updateNumberField("stock", e.target.value)}
                                 className="font-poppins"
                             />
                         </div>
