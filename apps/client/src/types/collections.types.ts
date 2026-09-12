@@ -12,6 +12,8 @@ export type ProductImage = {
     url: string;
     publicId: string;
     isCover: boolean;
+    // Which colour this photo shows. Absent on images uploaded before colour tagging existed.
+    color?: string;
 };
 
 export type CustomerProduct = {
@@ -43,6 +45,10 @@ export type GetCustomerProductsParams = {
 // GET /products/:id returns the product document on its own — there is no relatedProducts
 // wrapper server-side, so related items are fetched separately by category.
 export type CustomerProductDetailsResponse = CustomerProduct;
+
+export type ProductFacets = {
+    colors: string[];
+};
 
 export type FacetKey = "category" | "brand" | "color" | "size";
 

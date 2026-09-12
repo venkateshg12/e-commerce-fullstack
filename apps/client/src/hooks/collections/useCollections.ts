@@ -1,6 +1,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
-import { getCustomerCategories, getCustomerProducts } from "@/api/collection";
+import {
+    getCustomerCategories,
+    getCustomerProductFacets,
+    getCustomerProducts,
+} from "@/api/collection";
 import { COLOR_FILTER_ENABLED } from "@/constants/constant";
 import type {
     ActiveFilterBadge,
@@ -53,24 +57,19 @@ export function useCollections() {
         placeholderData: keepPreviousData,
     });
 
-    // Colors come from the unfiltered catalog so the facet list stays stable while filtering.
-    const colorsQuery = useQuery({
-        queryKey: ["customer-products", {}],
-        queryFn: () => getCustomerProducts(),
+
+    // Distinct colors come from the backend rather than the client downloading the whole
+    // catalog to dedupe them — stays stable while filtering, same as before.
+    const facetsQuery = useQuery({
+        queryKey: ["customer-product-facets"],
+        queryFn: getCustomerProductFacets,
         staleTime: 5 * 60 * 1000,
         enabled: COLOR_FILTER_ENABLED,
-        select: (response) => {
-            const colors = new Set<string>();
-            response.data?.forEach((item) => {
-                item.colors?.forEach((color) => colors.add(color));
-            });
-            return Array.from(colors).sort((a, b) => a.localeCompare(b));
-        },
     });
 
     const categories = categoriesQuery.data?.data ?? [];
     const products = productsQuery.data?.data ?? [];
-    const availableColors = colorsQuery.data ?? [];
+    const availableColors = facetsQuery.data?.data.colors ?? [];
 
     const hasActiveFilters = Boolean(
         filters.category || filters.brand || filters.color || filters.size

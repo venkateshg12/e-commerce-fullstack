@@ -4,6 +4,7 @@ import type {
     CustomerProductDetailsResponse,
     GetCustomerProductsParams,
     ProductCategory,
+    ProductFacets,
     SuccessResponse,
 } from "@/types";
 
@@ -18,6 +19,11 @@ export const getCustomerProducts = async (
     const response = await API.get<SuccessResponse<CustomerProduct[]>>("/products", {
         params,
     });
+    return response.data;
+};
+
+export const getCustomerProductFacets = async (): Promise<SuccessResponse<ProductFacets>> => {
+    const response = await API.get<SuccessResponse<ProductFacets>>("/products/facets");
     return response.data;
 };
 
