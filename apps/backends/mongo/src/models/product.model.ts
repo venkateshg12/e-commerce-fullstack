@@ -17,6 +17,12 @@ const ProductImageSchema = new mongoose.Schema<ProductImage>({
     isCover: {
         type: Boolean,
         default: false,
+    },
+    // Which colour this photo shows. Optional: images uploaded before this field existed
+    // have none, and every read path tolerates that.
+    color: {
+        type: String,
+        trim: true,
     }
 }, { _id: false });
 

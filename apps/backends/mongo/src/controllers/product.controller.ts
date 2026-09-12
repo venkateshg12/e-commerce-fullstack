@@ -10,6 +10,8 @@ import {
     deleteProductImagesSchema,
     changeProductCoverSchema,
     productAppliedFilterListQuerySchema,
+    setImageColorSchema,
+    uploadImageColorsSchema,
     type ProductSort,
 } from "@repo/types";
 import {
@@ -18,6 +20,7 @@ import {
     uploadProductImagesService,
     deleteProductImagesService,
     changeProductCoverService,
+    setProductImageColorService,
     deleteProductService,
 } from "../services/product.service";
 
@@ -48,8 +51,21 @@ export const uploadProductImagesHandler = catchError(
     async (req, res) => {
         const productId = req.params.id as string;
         const files = (req.files as Express.Multer.File[]) || [];
-        const product = await uploadProductImagesService(productId, files);
+        // Multipart text parts land on req.body; one `imageColors` part per file part, in order.
+        const { imageColors } = uploadImageColorsSchema.parse(req.body);
+        const product = await uploadProductImagesService(productId, files, imageColors);
         return res.status(ACCEPTED).json(ok(product));
+    }
+);
+
+// Sets which colour a single already-uploaded image depicts, then re-derives product.colors.
+
+export const setProductImageColorHandler = catchError(
+    async (req, res) => {
+        const productId = req.params.id as string;
+        const payload = setImageColorSchema.parse(req.body);
+        const product = await setProductImageColorService(productId, payload);
+        return res.status(OK).json(ok(product));
     }
 );
 
@@ -60,7 +76,7 @@ export const deleteProductImagesHandler = catchError(
         const productId = req.params.id as string;
         const payload = deleteProductImagesSchema.parse(req.body);
         const product = await deleteProductImagesService(productId, payload);
-        return res.status(OK).json(ok(product));
+        return res.status(ACCEPTED).json(ok(product));
     }
 );
 
@@ -81,7 +97,7 @@ export const deleteProductHandler = catchError(
     async (req, res) => {
         const productId = req.params.id as string;
         const result = await deleteProductService(productId);
-        return res.status(OK).json(ok(result));
+        return res.status(ACCEPTED).json(ok(result));
     }
 );
 
@@ -126,6 +142,19 @@ export const updateProductCategoryHandler = catchError(
     }
 );
 
+
+export const getProductFacetsHandler = catchError(
+    async (req, res) => {
+        // Public, unauthenticated endpoint — always scope to what a storefront visitor may
+        // see. Intentionally ignores every other filter (category/brand/size), matching the
+        // "facet list stays stable while filtering" behavior this endpoint replaces.
+        const colors = await ProductModel.distinct("colors", { status: "active" });
+
+        return res.status(OK).json(ok({
+            colors: colors.filter(Boolean).sort((a, b) => a.localeCompare(b)),
+        }));
+    }
+);
 
 export const searchProductHandler = catchError(
     async (req, res) => {
