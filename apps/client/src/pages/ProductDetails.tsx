@@ -79,24 +79,26 @@ const ProductDetails = () => {
     ? originalPrice - (originalPrice * salePercentage) / 100
     : originalPrice;
 
+  const allImages = product.images ?? [];
+
+  // Swatches come from the product's colour palette, set by the admin in the product dialog.
   const colors = (product.colors ?? []).filter(Boolean);
+
+  // If photos happen to carry a colour, narrow the gallery to the selected colour's photos.
+  // Untagged catalogues fall through to every photo, so a colour click never blanks the gallery.
+  const colorImages = selectedColor
+    ? allImages.filter((image) => image.color?.trim() === selectedColor)
+    : allImages;
+  const visibleImages = colorImages.length ? colorImages : allImages;
   const sizes = (product.sizes ?? []).filter(Boolean);
   const inStock = Number(product.stock) > 0;
   const isLowStock = inStock && Number(product.stock) <= 5;
 
-  // The schema has no colour-to-image mapping, so pair them by position: the Nth colour
-  // shows the Nth photo. Products with fewer images than colours simply keep the current one.
-  const handleSelectColor = (color: string, index: number) => {
-    const isDeselecting = selectedColor === color;
-    setSelectedColor(isDeselecting ? "" : color);
-
-    const imageCount = (product.images ?? []).length;
-
-    if (isDeselecting) {
-      setActiveImageIndex(0);
-    } else if (index < imageCount) {
-      setActiveImageIndex(index);
-    }
+  // Each photo carries the colour it depicts, so selecting a colour narrows the gallery to
+  // that colour's photos and jumps to the first of them.
+  const handleSelectColor = (color: string) => {
+    setSelectedColor(selectedColor === color ? "" : color);
+    setActiveImageIndex(0);
   };
 
   const handleAddToCart = (thenGoToCart: boolean) => {
@@ -171,7 +173,7 @@ const ProductDetails = () => {
         <div className="pdp-layout">
           <div className="pdp-gallery-col">
             <ProductGallery
-              images={product.images ?? []}
+              images={visibleImages}
               title={product.title}
               activeIndex={activeImageIndex}
               onSelect={setActiveImageIndex}
@@ -218,7 +220,7 @@ const ProductDetails = () => {
                         type="button"
                         aria-label={`Color option ${index + 1}`}
                         aria-pressed={selectedColor === color}
-                        onClick={() => handleSelectColor(color, index)}
+                        onClick={() => handleSelectColor(color)}
                         className={cn(
                           "pdp-swatch",
                           selectedColor === color && "pdp-swatch-active"
@@ -227,7 +229,11 @@ const ProductDetails = () => {
                           backgroundColor:
                             COLOR_MAP[String(color).toLowerCase()] || color,
                         }}
-                      />
+                      >
+                        {selectedColor === color ? (
+                          <Check className="pdp-swatch-check" />
+                        ) : null}
+                      </button>
                     ))}
                   </div>
                 </div>
