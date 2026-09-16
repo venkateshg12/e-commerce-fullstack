@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { BRAND_OPTIONS } from "@/constants/constant";
+import { PRODUCT_TYPES, type ProductType } from "@repo/types";
 import useProductForm from "@/hooks/product/useProductForm";
 import type { Category, Product } from "@/types/product.types";
 import { Loader2 } from "lucide-react";
@@ -116,6 +117,27 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
                             </Select>
                         </div>
 
+                        <div className="flex items-center gap-3 h-9">
+                            <Label className="font-poppins shrink-0">Type</Label>
+                            <Select
+                                value={form.productType}
+                                onValueChange={(val) => updateFormField("productType", val as ProductType)}
+                            >
+                                <SelectTrigger className="font-poppins flex-1">
+                                    <SelectValue placeholder="Select Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {PRODUCT_TYPES.map((type) => (
+                                        <SelectItem key={type} value={type} className="font-poppins">
+                                            {type}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="flex items-center gap-3 h-9">
                             <Label className="font-poppins shrink-0">Status</Label>
                             <RadioGroup
