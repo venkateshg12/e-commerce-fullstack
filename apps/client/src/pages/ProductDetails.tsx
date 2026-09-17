@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Heart, ShoppingBag, Share2, Truck } from "lucide-react";
 import { AlertPopup } from "@/components/ui/alert-popup";
@@ -9,9 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerProductCard from "@/components/user/collections/CustomerProductCard";
 import ProductGallery from "@/components/user/collections/ProductGallery";
-import { COLOR_MAP } from "@/constants/constant";
+import { pluralize } from "@/constants/constant";
 import { useAddToCart } from "@/hooks/cart/useAddToCart";
 import { useProductDetails } from "@/hooks/collections/useProductDetails";
+import { useGetWishlist } from "@/hooks/wishlist/useGetWishlist";
+import { useToggleWishlistItem } from "@/hooks/wishlist/useToggleWishlistItem";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import type { ProductSize } from "@/types";
@@ -22,19 +24,25 @@ type FeedbackState = {
   description: string;
 };
 
-const ProductDetails = () => {
-  const { id } = useParams<{ id: string }>();
+const ProductDetailsView = ({ id }: { id?: string }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
 
-  const { product, relatedProducts, isLoading, isError } = useProductDetails(id);
+  const { product, sameType, sameCategory, sameBrand, isLoading, isError } =
+    useProductDetails(id);
   const addToCartMutation = useAddToCart();
+  const { data: wishlist } = useGetWishlist();
+  const toggleWishlistMutation = useToggleWishlistItem();
 
-  const [selectedColor, setSelectedColor] = useState<string>("");
   const [selectedSize, setSelectedSize] = useState<ProductSize | "">("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+
+  // Opening another product from a "See more" rail lands at the top of the new page, not the bottom.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, []);
 
   if (isLoading) {
     return (
@@ -79,26 +87,75 @@ const ProductDetails = () => {
     ? originalPrice - (originalPrice * salePercentage) / 100
     : originalPrice;
 
-  const allImages = product.images ?? [];
+  // Cover first, matching ProductGallery's own ordering, so an index means the same photo in the
+  // gallery and in the More Colors grid.
+  const orderedImages = [...(product.images ?? [])].sort(
+    (a, b) => Number(b?.isCover) - Number(a?.isCover)
+  );
+  const activeImage = orderedImages[activeImageIndex];
 
-  // Swatches come from the product's colour palette, set by the admin in the product dialog.
+  // The product's colour palette — still shown as a count in Specs.
   const colors = (product.colors ?? []).filter(Boolean);
 
-  // If photos happen to carry a colour, narrow the gallery to the selected colour's photos.
-  // Untagged catalogues fall through to every photo, so a colour click never blanks the gallery.
-  const colorImages = selectedColor
-    ? allImages.filter((image) => image.color?.trim() === selectedColor)
-    : allImages;
-  const visibleImages = colorImages.length ? colorImages : allImages;
   const sizes = (product.sizes ?? []).filter(Boolean);
   const inStock = Number(product.stock) > 0;
   const isLowStock = inStock && Number(product.stock) <= 5;
+  const categoryHref = `/collections?category=${product.category?._id ?? ""}`;
+  // Same type → same category → same brand. Empty sections are dropped.
+  const relatedSections = [
+    {
+      key: "type",
+      title: `More ${pluralize(product.subCategory?.name ?? "")}`,
+      products: sameType,
+      href: categoryHref,
+    },
+    {
+      key: "category",
+      title: `More in ${product.category?.name ?? "this category"}`,
+      products: sameCategory,
+      href: categoryHref,
+    },
+    {
+      key: "brand",
+      title: `More from ${product.brand?.name ?? "this brand"}`,
+      products: sameBrand,
+      href: `/collections?brand=${product.brand?._id ?? ""}`,
+    },
+  ].filter((section) => section.products.length);
 
-  // Each photo carries the colour it depicts, so selecting a colour narrows the gallery to
-  // that colour's photos and jumps to the first of them.
-  const handleSelectColor = (color: string) => {
-    setSelectedColor(selectedColor === color ? "" : color);
-    setActiveImageIndex(0);
+  const isWishlisted =
+    wishlist?.data.items.some((item) => item.productId === product._id) ?? false;
+
+  const handleToggleWishlist = () => {
+    // Same gate and redirect pattern as add-to-cart — wishlist is auth-only on the backend too.
+    if (!user) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+
+    const wasWishlisted = isWishlisted;
+
+    toggleWishlistMutation.mutate(
+      { productId: product._id },
+      {
+        onSuccess: () => {
+          setFeedback({
+            type: "success",
+            title: wasWishlisted ? "Removed from wishlist" : "Added to wishlist",
+            description: wasWishlisted
+              ? `${product.title} was removed from your wishlist.`
+              : `${product.title} was added to your wishlist.`,
+          });
+        },
+        onError: (error) => {
+          setFeedback({
+            type: "error",
+            title: "Could not update wishlist",
+            description: error?.message || "Something went wrong. Please try again.",
+          });
+        },
+      }
+    );
   };
 
   const handleAddToCart = (thenGoToCart: boolean) => {
@@ -121,8 +178,11 @@ const ProductDetails = () => {
       {
         productId: product._id,
         quantity: 1,
-        color: selectedColor || undefined,
+        // Untagged photos give undefined, and the backend falls back to the product's first colour.
+        color: activeImage?.color || undefined,
         size: (selectedSize || undefined) as ProductSize | undefined,
+        // Whichever photo is showing right now — from the rail or More Colors — is this line's image.
+        image: activeImage?.url,
       },
       {
         onSuccess: () => {
@@ -173,17 +233,30 @@ const ProductDetails = () => {
         <div className="pdp-layout">
           <div className="pdp-gallery-col">
             <ProductGallery
-              images={visibleImages}
+              images={orderedImages}
               title={product.title}
               activeIndex={activeImageIndex}
               onSelect={setActiveImageIndex}
             />
 
             <div className="pdp-gallery-actions">
-              <Button variant="outline" size="icon" aria-label="Add to wishlist">
-                <Heart />
+              <Button
+                variant="outline"
+                size="icon"
+                className="cursor-pointer"
+                aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                aria-pressed={isWishlisted}
+                disabled={toggleWishlistMutation.isPending}
+                onClick={handleToggleWishlist}
+              >
+                <Heart className={cn(isWishlisted && "pdp-wishlist-icon-active")} />
               </Button>
-              <Button variant="outline" size="icon" aria-label="Share product">
+              <Button
+                variant="outline"
+                size="icon"
+                className="cursor-pointer"
+                aria-label="Share product"
+              >
                 <Share2 />
               </Button>
             </div>
@@ -192,7 +265,7 @@ const ProductDetails = () => {
           <div className="pdp-info">
             <Card className="pdp-card">
               <div className="pdp-heading">
-                <p className="pdp-brand">{product.brand}</p>
+                <p className="pdp-brand">{product.brand?.name}</p>
                 <h1 className="pdp-title">{product.title}</h1>
               </div>
 
@@ -209,30 +282,31 @@ const ProductDetails = () => {
                 ) : null}
               </div>
 
-              {colors.length ? (
+              {orderedImages.length > 1 ? (
                 <div className="pdp-option-group">
-                  <p className="pdp-option-label">Colors</p>
+                  <p className="pdp-option-label">More Colors</p>
 
-                  <div className="pdp-swatches">
-                    {colors.map((color, index) => (
+                  {/* Shares activeImageIndex with the gallery rail: a click swaps only the main
+                      image — no filtering, no re-ordering, no navigation. */}
+                  <div className="pdp-more-colors">
+                    {orderedImages.map((image, index) => (
                       <button
-                        key={color}
+                        key={image.publicId || image.url}
                         type="button"
-                        aria-label={`Color option ${index + 1}`}
-                        aria-pressed={selectedColor === color}
-                        onClick={() => handleSelectColor(color)}
+                        aria-label={`Show colour ${index + 1}`}
+                        aria-pressed={index === activeImageIndex}
+                        onClick={() => setActiveImageIndex(index)}
                         className={cn(
-                          "pdp-swatch",
-                          selectedColor === color && "pdp-swatch-active"
+                          "pdp-more-colors-tile",
+                          index === activeImageIndex && "pdp-more-colors-tile-active"
                         )}
-                        style={{
-                          backgroundColor:
-                            COLOR_MAP[String(color).toLowerCase()] || color,
-                        }}
                       >
-                        {selectedColor === color ? (
-                          <Check className="pdp-swatch-check" />
-                        ) : null}
+                        <img
+                          src={image.url}
+                          alt=""
+                          loading="lazy"
+                          className="pdp-more-colors-image"
+                        />
                       </button>
                     ))}
                   </div>
@@ -311,7 +385,7 @@ const ProductDetails = () => {
               <div className="pdp-specs">
                 <div className="pdp-spec">
                   <p className="pdp-spec-label">Brand</p>
-                  <p className="pdp-spec-value">{product.brand || "—"}</p>
+                  <p className="pdp-spec-value">{product.brand?.name || "—"}</p>
                 </div>
 
                 <div className="pdp-spec">
@@ -344,24 +418,24 @@ const ProductDetails = () => {
           </div>
         </div>
 
-        {relatedProducts.length ? (
-          <section className="pdp-related">
+        {relatedSections.map((section) => (
+          <section key={section.key} className="pdp-related">
             <div className="pdp-related-head">
-              <h2 className="pdp-section-title">See more</h2>
-              <Link to="/collections" className="pdp-related-link">
+              <h2 className="pdp-section-title">{section.title}</h2>
+              <Link to={section.href} className="pdp-related-link">
                 View all
               </Link>
             </div>
 
             <div className="pdp-related-rail">
-              {relatedProducts.map((item) => (
+              {section.products.map((item) => (
                 <div key={item._id} className="pdp-related-item">
                   <CustomerProductCard product={item} />
                 </div>
               ))}
             </div>
           </section>
-        ) : null}
+        ))}
       </div>
 
       <AlertPopup
@@ -374,6 +448,13 @@ const ProductDetails = () => {
       />
     </div>
   );
+};
+
+// Keyed on the id so moving between products remounts the view: the selected image and size
+// reset instead of carrying over from the previous product.
+const ProductDetails = () => {
+  const { id } = useParams<{ id: string }>();
+  return <ProductDetailsView key={id} id={id} />;
 };
 
 export default ProductDetails;

@@ -40,30 +40,30 @@ export const GoogleSignInButton = () => {
   const buttonRef = useRef<HTMLDivElement>(null);
   const { mutate: loginWithGoogle } = useGoogleLogin();
 
- useEffect(() => {
-  const handleCredentialResponse = (response: GoogleCredentialResponse) => {
-    if (response.credential) {
-      loginWithGoogle(response.credential);
-    }
-  };
-
-  let cancelled = false;
-
-  loadGoogleSdk()
-    .then(() => {
-      if (!cancelled && buttonRef.current) {
-        initializeGoogleSignIn(buttonRef.current, handleCredentialResponse);
+  useEffect(() => {
+    const handleCredentialResponse = (response: GoogleCredentialResponse) => {
+      if (response.credential) {
+        loginWithGoogle(response.credential);
       }
-    })
-    .catch((err) => {
-      console.error(err);
-      // optionally surface a fallback "Sign in" button / error state
-    });
+    };
 
-  return () => {
-    cancelled = true;
-  };
-}, [loginWithGoogle]);
+    let cancelled = false;
+
+    loadGoogleSdk()
+      .then(() => {
+        if (!cancelled && buttonRef.current) {
+          initializeGoogleSignIn(buttonRef.current, handleCredentialResponse);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        // optionally surface a fallback "Sign in" button / error state
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loginWithGoogle]);
 
   return (
     <div className="w-full flex  rounded-lg">
