@@ -55,7 +55,7 @@ const CustomerProductCard = ({ product }: CustomerProductCardProps) => {
         </div>
 
         <div className="product-card-body">
-          <p className="product-card-brand">{product.brand}</p>
+          <p className="product-card-brand">{product.brand?.name}</p>
           <p className="product-card-title">{product.title}</p>
 
           {colors.length ? (

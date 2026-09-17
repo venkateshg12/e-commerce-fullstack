@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import {
-  BRAND_OPTIONS,
   COLOR_FILTER_ENABLED,
   COLOR_MAP,
   SIZE_OPTIONS,
@@ -9,11 +8,13 @@ import { cn } from "@/lib/utils";
 import type {
   CustomerProductFilters,
   FacetKey,
+  NamedRef,
   ProductCategory,
 } from "@/types";
 
 type CustomerFiltersPanelProps = {
   categories: ProductCategory[];
+  brands: NamedRef[];
   filters: CustomerProductFilters;
   availableColors: string[];
   hasActiveFilters: boolean;
@@ -23,6 +24,7 @@ type CustomerFiltersPanelProps = {
 
 const CustomerFiltersPanel = ({
   categories,
+  brands,
   filters,
   availableColors,
   hasActiveFilters,
@@ -99,8 +101,8 @@ const CustomerFiltersPanel = ({
         <p className="facet-group-title">Brand</p>
 
         <div className="facet-options-wrap">
-          {(BRAND_OPTIONS || []).map((brand) =>
-            renderOption("brand", brand, brand),
+          {brands.map((brand) =>
+            renderOption("brand", brand._id, brand.name),
           )}
         </div>
       </div>

@@ -16,7 +16,7 @@ const Wishlist = () => {
     if (isPending) {
       return (
         <div className="wishlist-grid" aria-hidden="true">
-          {Array.from({ length: 3 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_, index) => (
             <WishlistItemCardSkeleton key={`wishlist-skeleton-${index}`} />
           ))}
         </div>
