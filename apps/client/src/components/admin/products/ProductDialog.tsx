@@ -6,10 +6,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { BRAND_OPTIONS } from "@/constants/constant";
-import { PRODUCT_TYPES, type ProductType } from "@repo/types";
 import useProductForm from "@/hooks/product/useProductForm";
-import type { Category, Product } from "@/types/product.types";
+import type { Brand, Category, Product } from "@/types/product.types";
 import { Loader2 } from "lucide-react";
 import ColorPicker from "./ColorPicker";
 import ImagePicker from "./ImagePicker";
@@ -20,11 +18,12 @@ type ProductDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     categories: Category[];
+    brands: Brand[];
     product: Product | null;
     onSaved: () => Promise<void>;
 };
 
-const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: ProductDialogProps) => {
+const ProductDialog = ({ open, onOpenChange, categories, brands, product, onSaved }: ProductDialogProps) => {
     const {
         form,
         alertPopup,
@@ -32,6 +31,7 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
         isPending,
         updateFormField,
         updateNumberField,
+        updateCategory,
         addColor,
         removeColor,
         toggleSizes,
@@ -44,6 +44,13 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
         onSaved,
         onClose: () => onOpenChange(false),
     });
+
+    const selectedCategory = categories.find((cat) => cat._id === form.category);
+    // A plain `if`/ternary rather than `selectedCategory?.x` inline: the React Compiler's
+    // auto-memoization hoists the dependency check on an optional chain to a bare (non-guarded)
+    // property read, which throws once `selectedCategory` is undefined.
+    const selectedCategoryName = selectedCategory ? selectedCategory.name : "";
+    const types = selectedCategory ? selectedCategory.subCategories ?? [] : [];
 
     return (
         <>
@@ -76,11 +83,17 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
                                     <SelectValue placeholder="Select Brand" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {BRAND_OPTIONS.map((brand) => (
-                                        <SelectItem key={brand} value={brand} className="font-poppins">
-                                            {brand}
-                                        </SelectItem>
-                                    ))}
+                                    {brands.length === 0 ? (
+                                        <div className="px-2 py-1.5 text-sm text-muted-foreground font-poppins">
+                                            No brands yet. Add one in Manage Brands.
+                                        </div>
+                                    ) : (
+                                        brands.map((brand) => (
+                                            <SelectItem key={brand._id} value={brand._id} className="font-poppins">
+                                                {brand.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -102,7 +115,7 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
                             <Label className="font-poppins shrink-0">Category</Label>
                             <Select
                                 value={form.category}
-                                onValueChange={(val) => updateFormField("category", val)}
+                                onValueChange={updateCategory}
                             >
                                 <SelectTrigger className="font-poppins flex-1">
                                     <SelectValue placeholder="Select Category" />
@@ -119,19 +132,29 @@ const ProductDialog = ({ open, onOpenChange, categories, product, onSaved }: Pro
 
                         <div className="flex items-center gap-3 h-9">
                             <Label className="font-poppins shrink-0">Type</Label>
+                            {/* Only the chosen category's types; switching category clears it. The
+                                key remounts the Select so a cleared value shows the placeholder again. */}
                             <Select
-                                value={form.productType}
-                                onValueChange={(val) => updateFormField("productType", val as ProductType)}
+                                key={form.category}
+                                value={form.subCategory}
+                                onValueChange={(val) => updateFormField("subCategory", val)}
+                                disabled={!selectedCategory}
                             >
                                 <SelectTrigger className="font-poppins flex-1">
-                                    <SelectValue placeholder="Select Type" />
+                                    <SelectValue placeholder={selectedCategory ? "Select Type" : "Select a category first"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {PRODUCT_TYPES.map((type) => (
-                                        <SelectItem key={type} value={type} className="font-poppins">
-                                            {type}
-                                        </SelectItem>
-                                    ))}
+                                    {types.length === 0 ? (
+                                        <div className="px-2 py-1.5 text-sm text-muted-foreground font-poppins">
+                                            No types in {selectedCategoryName} yet. Add one in Manage Categories.
+                                        </div>
+                                    ) : (
+                                        types.map((type) => (
+                                            <SelectItem key={type._id} value={type._id} className="font-poppins">
+                                                {type.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>

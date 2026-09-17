@@ -104,9 +104,10 @@ const ProductTable = ({ products = [], onEdit }: ProductTableProps) => {
                 <TableBody>
                     {products.map((item) => {
                         const coverUrl = getCoverImageUrl(item.images);
-                        const categoryName = typeof item.category === "object" && item.category !== null
-                            ? (item.category as any).name
-                            : "Uncategorized";
+                        const categoryName = item.category?.name ?? "Uncategorized";
+                        const categoryLabel = item.subCategory
+                            ? `${categoryName} · ${item.subCategory.name}`
+                            : categoryName;
 
                         const isProcessingImages = item.uploadStatus === "PROCESSING" || item.uploadStatus === "PENDING";
 
@@ -153,12 +154,12 @@ const ProductTable = ({ products = [], onEdit }: ProductTableProps) => {
                                 </TableCell>
 
                                 <TableCell className="font-poppins text-muted-foreground">
-                                    {item.brand || "—"}
+                                    {item.brand?.name || "—"}
                                 </TableCell>
 
                                 <TableCell className="font-poppins text-muted-foreground">
                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">
-                                        {categoryName}
+                                        {categoryLabel}
                                     </span>
                                 </TableCell>
 

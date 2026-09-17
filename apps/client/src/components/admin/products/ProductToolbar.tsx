@@ -6,10 +6,11 @@ type ProductToolbarProps = {
     search: string,
     onSearchChange: (value: string) => void,
     onManageCategories: () => void,
+    onManageBrands: () => void,
     onAddProduct: () => void,
 }
 
-const ProductToolbar = ({ search, onSearchChange, onManageCategories, onAddProduct }: ProductToolbarProps) => {
+const ProductToolbar = ({ search, onSearchChange, onManageCategories, onManageBrands, onAddProduct }: ProductToolbarProps) => {
     return (
         <div className="flex flex-row items-center justify-between gap-3 w-full">
             <div className="relative flex-1  max-w-md flex items-center">
@@ -21,9 +22,12 @@ const ProductToolbar = ({ search, onSearchChange, onManageCategories, onAddProdu
                     className="pl-9 h-10 w-full"
                 />
             </div>
-            <div className="flex flex-row items-center gap-2 shrink-0">
+            <div className="flex flex-row flex-wrap items-center justify-end gap-2 shrink-0">
+                <Button onClick={onManageBrands} variant="outline" className="cursor-pointer h-10 px-4 whitespace-nowrap">
+                    Manage Brands
+                </Button>
                 <Button onClick={onManageCategories} variant="outline" className="cursor-pointer h-10 px-4 whitespace-nowrap">
-                    Manage Category
+                    Manage Categories
                 </Button>
                 <Button onClick={onAddProduct} className="cursor-pointer h-10 px-4 whitespace-nowrap">
                     <Plus className="mr-1.5 h-4 w-4" />
