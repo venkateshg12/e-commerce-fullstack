@@ -43,9 +43,9 @@ const ProductSchema = new mongoose.Schema<ProductDocument>({
         required: true
     },
     brand: {
-        type: String,
+        type: Schema.Types.ObjectId,
+        ref: 'Brand',
         required: true,
-        trim: true,
     },
     stock: {
         type: Number,
@@ -66,6 +66,11 @@ const ProductSchema = new mongoose.Schema<ProductDocument>({
             enum: ["S", "M", "L", "XL", "XXL"]
         }],
         default: [],
+    },
+    // The product's type (Shirt, Jeans…), always one of its category's sub-categories.
+    subCategory: {
+        type: Schema.Types.ObjectId,
+        ref: 'SubCategory',
     },
     price: {
         type: Number,

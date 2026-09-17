@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { ACCEPTED, BAD_REQUEST, CONFLICT, CREATED, NOT_FOUND, OK } from "../constants/https";
 import CategoryModel from "../models/category.model";
+import { getCategoriesWithSubCategoriesService } from "../services/catalog.service";
 import ProductModel from "../models/product.model";
 import { appAssert, catchError, ok } from "../utils";
 import {
@@ -22,6 +23,7 @@ import {
     changeProductCoverService,
     setProductImageColorService,
     deleteProductService,
+    PRODUCT_POPULATE,
 } from "../services/product.service";
 
 
@@ -52,8 +54,8 @@ export const uploadProductImagesHandler = catchError(
         const productId = req.params.id as string;
         const files = (req.files as Express.Multer.File[]) || [];
         // Multipart text parts land on req.body; one `imageColors` part per file part, in order.
-        const { imageColors } = uploadImageColorsSchema.parse(req.body);
-        const product = await uploadProductImagesService(productId, files, imageColors);
+        const { imageColors, position } = uploadImageColorsSchema.parse(req.body);
+        const product = await uploadProductImagesService(productId, files, imageColors, position);
         return res.status(ACCEPTED).json(ok(product));
     }
 );
@@ -103,9 +105,7 @@ export const deleteProductHandler = catchError(
 
 export const productCategoryHandler = catchError(
     async (req, res) => {
-        const categories = await CategoryModel.find({}).sort({
-            name: 1,
-        });
+        const categories = await getCategoriesWithSubCategoriesService();
         res.json(ok(categories));
     }
 );
@@ -158,7 +158,7 @@ export const getProductFacetsHandler = catchError(
 
 export const searchProductHandler = catchError(
     async (req, res) => {
-        const { search, category, brand, color, size, sort } = productAppliedFilterListQuerySchema.parse(req.query);
+        const { search, category, brand, color, size, subCategory, sort } = productAppliedFilterListQuerySchema.parse(req.query);
 
         const query: Record<string, unknown> = {};
 
@@ -166,10 +166,13 @@ export const searchProductHandler = catchError(
             const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             query.title = { $regex: escapedSearch, $options: "i" };
         }
+        // A malformed id would otherwise reach Mongo and fail the cast with a 500.
         if (category) {
+            appAssert(mongoose.isValidObjectId(category), BAD_REQUEST, "Invalid category ID");
             query.category = category;
         }
         if (brand) {
+            appAssert(mongoose.isValidObjectId(brand), BAD_REQUEST, "Invalid brand ID");
             query.brand = brand;
         }
         if (color) {
@@ -177,6 +180,10 @@ export const searchProductHandler = catchError(
         }
         if (size) {
             query.sizes = size;
+        }
+        if (subCategory) {
+            appAssert(mongoose.isValidObjectId(subCategory), BAD_REQUEST, "Invalid type ID");
+            query.subCategory = subCategory;
         }
 
         // If not an admin, only allow viewing active products
@@ -195,7 +202,7 @@ export const searchProductHandler = catchError(
 
 
         const products = await ProductModel.find(query)
-            .populate("category", "name")
+            .populate(PRODUCT_POPULATE)
             .sort(sortOption);
 
         return res.status(OK).json(ok(products));
@@ -215,16 +222,9 @@ export const searchProductByIdHandler = catchError(
             query.status = "active";
         }
 
-        const product = await ProductModel.findOne(query).populate("category", "name");
+        const product = await ProductModel.findOne(query).populate(PRODUCT_POPULATE);
         appAssert(product, NOT_FOUND, "Product not found");
 
         return res.status(OK).json(ok(product));
-    }
-);
-
-export const getCategoryHanlder = catchError(
-    async (req, res) => {
-        const categories = await CategoryModel.find({}).sort({ name: 1 });
-        res.status(OK).json(ok(categories));
     }
 );
