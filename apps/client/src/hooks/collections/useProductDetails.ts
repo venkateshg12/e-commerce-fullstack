@@ -3,6 +3,7 @@ import {
     getCustomerProductDetails,
     getCustomerProducts,
 } from "@/api/collection";
+import type { CustomerProduct } from "@/types";
 
 const RELATED_LIMIT = 8;
 
@@ -16,26 +17,57 @@ export function useProductDetails(productId?: string) {
 
     const product = productQuery.data?.data;
     const categoryId = product?.category?._id;
+    const subCategoryId = product?.subCategory?._id;
+    const brandId = product?.brand?._id;
 
-    // The backend has no "related products" endpoint, so reuse the catalog query filtered to
-    // this product's category and drop the product itself out of the list.
-    const relatedQuery = useQuery({
-        queryKey: ["customer-products", { category: categoryId, sort: "recent" }],
-        queryFn: () => getCustomerProducts({ category: categoryId, sort: "recent" }),
+    // The backend has no "related products" endpoint, so each section reuses the catalog query
+    // with a different filter. Keys match the collections page, so they share its cache.
+    const sameTypeParams = { category: categoryId, subCategory: subCategoryId, sort: "recent" as const };
+    const sameTypeQuery = useQuery({
+        queryKey: ["customer-products", sameTypeParams],
+        queryFn: () => getCustomerProducts(sameTypeParams),
+        enabled: Boolean(categoryId && subCategoryId),
+        staleTime: 60 * 1000,
+    });
+
+    const sameCategoryParams = { category: categoryId, sort: "recent" as const };
+    const sameCategoryQuery = useQuery({
+        queryKey: ["customer-products", sameCategoryParams],
+        queryFn: () => getCustomerProducts(sameCategoryParams),
         enabled: Boolean(categoryId),
         staleTime: 60 * 1000,
-        select: (response) =>
-            (response.data ?? [])
-                .filter((item) => item._id !== productId)
-                .slice(0, RELATED_LIMIT),
     });
+
+    const sameBrandParams = { brand: brandId, sort: "recent" as const };
+    const sameBrandQuery = useQuery({
+        queryKey: ["customer-products", sameBrandParams],
+        queryFn: () => getCustomerProducts(sameBrandParams),
+        enabled: Boolean(brandId),
+        staleTime: 60 * 1000,
+    });
+
+    // Each section drops the current product and anything an earlier section already shows,
+    // so a card never appears twice on the page.
+    const seen = new Set<string>(productId ? [productId] : []);
+    const take = (items: CustomerProduct[] | undefined) => {
+        const picked = (items ?? [])
+            .filter((item) => !seen.has(item._id))
+            .slice(0, RELATED_LIMIT);
+        picked.forEach((item) => seen.add(item._id));
+        return picked;
+    };
+
+    const sameType = subCategoryId ? take(sameTypeQuery.data?.data) : [];
+    const sameCategory = take(sameCategoryQuery.data?.data);
+    const sameBrand = take(sameBrandQuery.data?.data);
 
     return {
         product,
-        relatedProducts: relatedQuery.data ?? [],
+        sameType,
+        sameCategory,
+        sameBrand,
         isLoading: productQuery.isPending,
         isError: productQuery.isError,
         error: productQuery.error,
-        isRelatedLoading: relatedQuery.isPending && Boolean(categoryId),
     };
 }

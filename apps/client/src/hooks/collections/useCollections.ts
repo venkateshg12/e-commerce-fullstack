@@ -6,6 +6,7 @@ import {
     getCustomerProducts,
 } from "@/api/collection";
 import { COLOR_FILTER_ENABLED } from "@/constants/constant";
+import { useGetBrands } from "@/hooks/brand/useGetBrands";
 import type {
     ActiveFilterBadge,
     CustomerProductFilters,
@@ -47,6 +48,8 @@ export function useCollections() {
         staleTime: 5 * 60 * 1000,
     });
 
+    const brandsQuery = useGetBrands();
+
     const productsQuery = useQuery({
         // The key is compared structurally, so a fresh `query` object each render is fine.
         queryKey: ["customer-products", query],
@@ -68,6 +71,7 @@ export function useCollections() {
     });
 
     const categories = categoriesQuery.data?.data ?? [];
+    const brands = brandsQuery.data?.data ?? [];
     const products = productsQuery.data?.data ?? [];
     const availableColors = facetsQuery.data?.data.colors ?? [];
 
@@ -82,11 +86,14 @@ export function useCollections() {
         .map((key) => ({
             key,
             label: FACET_LABELS[key],
+            // Category and brand are ids in the URL; show their names.
             value:
                 key === "category"
                     ? categories.find((item) => item._id === filters.category)?.name ||
                       filters.category
-                    : filters[key],
+                    : key === "brand"
+                      ? brands.find((item) => item._id === filters.brand)?.name || filters.brand
+                      : filters[key],
         }));
 
     const toggleFacet = (key: FacetKey, value: string) => {
@@ -128,6 +135,7 @@ export function useCollections() {
 
     return {
         categories,
+        brands,
         products,
         // Cold load only — there is nothing at all to show yet.
         isInitialLoading: productsQuery.isPending,
