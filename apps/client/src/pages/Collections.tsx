@@ -36,6 +36,7 @@ const Collections = () => {
     toggleFacet,
     clearFilters,
     activeFilterBadges,
+    brands,
   } = useCollections();
 
   const skeletonGrid = (
@@ -129,6 +130,7 @@ const Collections = () => {
 
                 <CustomerFiltersPanel
                   categories={categories}
+                  brands={brands}
                   filters={filters}
                   availableColors={availableColors}
                   hasActiveFilters={hasActiveFilters}
@@ -145,6 +147,7 @@ const Collections = () => {
             <Card className="desktop-filter-card">
               <CustomerFiltersPanel
                 categories={categories}
+                brands={brands}
                 filters={filters}
                 availableColors={availableColors}
                 hasActiveFilters={hasActiveFilters}
