@@ -1,78 +1,188 @@
-import { createRateLimiter } from "../middleware/rateLimiter";
+import { Request } from "express";
+import { createDualRateLimiter, createRateLimiter } from "../middleware/rateLimiter";
 import { extractClientIp } from "../utils/rateLimiter/ipExtractor";
-import { RateLimiterRequest } from "../types/rateLimiter.types";
 import {
-    ADMIN_API_PREFIX,
+    AUTH_FORGOT_ACCOUNT_PREFIX,
     AUTH_FORGOT_PASS_PREFIX,
+    AUTH_FORGOT_SOURCE_PREFIX,
+    AUTH_LOGIN_ACCOUNT_PREFIX,
+    AUTH_LOGIN_SOURCE_PREFIX,
     AUTH_LOGIN_PREFIX,
+    AUTH_REFRESH_PREFIX,
     AUTH_REGISTER_PREFIX,
     AUTH_VERIFY_PREFIX,
+    CATALOG_PREFIX,
+    CHECKOUT_PREFIX,
+    FIFTEEN_MINUTES_MS,
+    FIVE_MINUTES_MS,
+    GLOBAL_IP_PREFIX,
+    GLOBAL_VISITOR_PREFIX,
     ONE_HOUR_MS,
+    ONE_MINUTE_MS,
+    PROMO_APPLY_PREFIX,
     PROTECTED_API_PREFIX,
-    PUBLIC_API_PREFIX
+    THIRTY_MINUTES_MS
 } from "../constants/rateLimiter.constant";
 
+/**
+ * Key Resolvers
+ */
+const ipAndEmailKeyResolver = (req: Request): string => {
+    const ip = extractClientIp(req);
+    return `ip:${ip}:email:${emailKeyPart(req)}`;
+};
+
+// The account being tried, independent of where the attempt came from.
+const emailKeyPart = (req: Request): string =>
+    req.body?.email ? String(req.body.email).toLowerCase().trim() : "anonymous";
+
+const emailKeyResolver = (req: Request): string => `email:${emailKeyPart(req)}`;
+
+const ipKeyResolver = (req: Request): string => `ip:${extractClientIp(req)}`;
+
+const visitorKeyResolver = (req: Request): string => {
+    return req.visitorId || req.cookies?.visitorId || extractClientIp(req);
+};
+
+const userKeyResolver = (req: Request): string => {
+    return req.userId ? `user:${req.userId}` : `ip:${extractClientIp(req)}`;
+};
+
+/**
+ * 1. Global Infrastructure Protection (Atomic Dual-Bucket)
+ * Runs pre-auth across all incoming requests.
+ * Evaluates both:
+ * - Anonymous browser fairness: 500 requests / 5 minutes
+ * - Aggregate IP flood defense: 2000 requests / 5 minutes
+ */
+export const globalLimiter = createDualRateLimiter({
+    visitorPrefix: GLOBAL_VISITOR_PREFIX,
+    ipPrefix: GLOBAL_IP_PREFIX,
+    windowMs: FIVE_MINUTES_MS,
+    visitorLimit: 500,
+    ipLimit: 2000,
+    visitorKeyResolver: (req: Request) => visitorKeyResolver(req),
+    ipKeyResolver: (req: Request) => extractClientIp(req)
+});
+
+/**
+ * 2. Authentication Limiters
+ * Security-sensitive; applies punitive temporary lockouts to the specific ip:email key.
+ */
 export const loginLimiter = createRateLimiter({
     prefix: AUTH_LOGIN_PREFIX,
-    windowMs: 15 * 60 * 1000,
-    blockDurationMs: ONE_HOUR_MS,
+    windowMs: FIVE_MINUTES_MS,
+    blockDurationMs: THIRTY_MINUTES_MS,
     max: 10,
-    keyResolver: (req: RateLimiterRequest) => {
-        const ip = extractClientIp(req);
-        const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "anonymous";
-        return `ip:${ip}:email:${email}`;
-    },
+    keyResolver: ipAndEmailKeyResolver
+});
+
+/*
+  The pair above is one axis of three, and on its own it stops neither shape of credential attack:
+  spread one account across many sources and no pair fills up; walk a list of accounts from one
+  source and, again, no pair fills up. These two cover those axes — an account is locked however
+  many places the guesses come from, and a source is capped however many accounts it tries.
+  All three run on the login route; the first to reject wins.
+*/
+export const loginAccountLimiter = createRateLimiter({
+    prefix: AUTH_LOGIN_ACCOUNT_PREFIX,
+    windowMs: FIFTEEN_MINUTES_MS,
+    blockDurationMs: THIRTY_MINUTES_MS,
+    max: 15,
+    keyResolver: emailKeyResolver
+});
+
+// Deliberately loose: a household or office behind one NAT address shares it, so this is sized to
+// catch account enumeration rather than to police normal shared use.
+export const loginSourceLimiter = createRateLimiter({
+    prefix: AUTH_LOGIN_SOURCE_PREFIX,
+    windowMs: FIFTEEN_MINUTES_MS,
+    max: 50,
+    keyResolver: ipKeyResolver
 });
 
 export const registerLimiter = createRateLimiter({
     prefix: AUTH_REGISTER_PREFIX,
-    windowMs: 15 * 60 * 1000,
+    windowMs: FIVE_MINUTES_MS,
     blockDurationMs: ONE_HOUR_MS,
-    max: 3,
-    keyResolver: (req: RateLimiterRequest) => `ip:${extractClientIp(req)}`,
+    max: 5,
+    keyResolver: ipAndEmailKeyResolver
 });
 
 export const forgotPasswordLimiter = createRateLimiter({
     prefix: AUTH_FORGOT_PASS_PREFIX,
-    windowMs: 15 * 60 * 1000,
-    blockDurationMs: ONE_HOUR_MS,
-    max: 3,
-    keyResolver: (req: RateLimiterRequest) => {
-        const ip = extractClientIp(req);
-        const email = req.body?.email ? String(req.body.email).toLowerCase().trim() : "anonymous";
-        return `ip:${ip}:email:${email}`;
-    },
+    windowMs: FIVE_MINUTES_MS,
+    blockDurationMs: THIRTY_MINUTES_MS,
+    max: 10,
+    keyResolver: ipAndEmailKeyResolver
+});
+
+// Caps how many reset mails one address can be sent however many sources ask for them, so the
+// endpoint can't be used to bury someone's inbox.
+export const forgotPasswordAccountLimiter = createRateLimiter({
+    prefix: AUTH_FORGOT_ACCOUNT_PREFIX,
+    windowMs: ONE_HOUR_MS,
+    max: 5,
+    keyResolver: emailKeyResolver
+});
+
+export const forgotPasswordSourceLimiter = createRateLimiter({
+    prefix: AUTH_FORGOT_SOURCE_PREFIX,
+    windowMs: FIFTEEN_MINUTES_MS,
+    max: 20,
+    keyResolver: ipKeyResolver
 });
 
 export const verifyEmailLimiter = createRateLimiter({
     prefix: AUTH_VERIFY_PREFIX,
-    windowMs: 15 * 60 * 1000,
-    blockDurationMs: ONE_HOUR_MS,
+    windowMs: FIFTEEN_MINUTES_MS,
+    blockDurationMs: THIRTY_MINUTES_MS,
     max: 5,
-    keyResolver: (req: RateLimiterRequest) => `ip:${extractClientIp(req)}`,
+    keyResolver: ipKeyResolver
 });
 
-export const publicApiLimiter = createRateLimiter({
-    prefix: PUBLIC_API_PREFIX,
-    windowMs: 15 * 60 * 1000,
-    blockDurationMs: ONE_HOUR_MS,
-    max: 100,
-    keyResolver: (req: RateLimiterRequest) => `ip:${extractClientIp(req)}`,
-   
+export const refreshTokenLimiter = createRateLimiter({
+    prefix: AUTH_REFRESH_PREFIX,
+    windowMs: FIFTEEN_MINUTES_MS,
+    max: 30,
+    keyResolver: ipKeyResolver
 });
 
+/**
+ * 3. Business-Sensitive Operations (Post-Auth)
+ */
+export const checkoutLimiter = createRateLimiter({
+    prefix: CHECKOUT_PREFIX,
+    windowMs: ONE_MINUTE_MS,
+    max: 10,
+    keyResolver: (req: Request) => `user:${req.userId}`
+});
+
+export const promoApplyLimiter = createRateLimiter({
+    prefix: PROMO_APPLY_PREFIX,
+    windowMs: ONE_MINUTE_MS,
+    max: 10,
+    keyResolver: (req: Request) => `user:${req.userId}`
+});
+
+/**
+ * 4. Public Storefront Catalog Browsing (Anonymous Browser Level)
+ * Non-punitive sliding window; discourages scrapers and protects MongoDB aggregations.
+ */
+export const publicCatalogLimiter = createRateLimiter({
+    prefix: CATALOG_PREFIX,
+    windowMs: FIFTEEN_MINUTES_MS,
+    max: 150,
+    keyResolver: (req: Request) => `guest:${visitorKeyResolver(req)}`
+});
+
+/**
+ * 5. Authenticated Customer APIs (Post-Auth)
+ * Isolates users behind shared NAT/cellular towers; protects against runaway client loops.
+ */
 export const protectedApiLimiter = createRateLimiter({
     prefix: PROTECTED_API_PREFIX,
-    windowMs: 15 * 60 * 1000,
-    max: 200,
-    keyResolver: (req: RateLimiterRequest) => `ip:${extractClientIp(req)}`,
-   
-});
-
-export const adminApiLimiter = createRateLimiter({
-    prefix: ADMIN_API_PREFIX,
-    windowMs: 15 * 60 * 1000,
-    blockDurationMs: ONE_HOUR_MS,
-    max: 50,
-    keyResolver: (req: RateLimiterRequest) => `ip:${extractClientIp(req)}`,
+    windowMs: FIVE_MINUTES_MS,
+    max: 300,
+    keyResolver: (req: Request) => `user:${req.userId}`
 });
