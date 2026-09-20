@@ -2,6 +2,7 @@ import { Router } from "express";
 import requireAdmin from "../middleware/requireAdmin";
 import authenticate from "../middleware/authenticate";
 import { upload } from "../middleware/upload";
+import { publicCatalogLimiter } from "../config/rateLimiter";
 import {
     createProductCategoryHandler,
     createProductHandler,
@@ -36,12 +37,12 @@ productRoutes.put("/admin/categories/:id", authenticate, requireAdmin, updatePro
 // Public storefront catalog: browsable without an account. The handlers gate on
 // `req.role !== "admin"` to force `status: "active"`, and an anonymous request has no role,
 // so inactive products stay hidden.
-productRoutes.get("/categories", productCategoryHandler);
+productRoutes.get("/categories", publicCatalogLimiter, productCategoryHandler);
 
 // Must come before "/products/:id" — Express matches route order, and ":id" would otherwise
 // swallow this as id="facets".
-productRoutes.get("/products/facets", getProductFacetsHandler);
-productRoutes.get("/products", searchProductHandler);
-productRoutes.get("/products/:id", searchProductByIdHandler);
+productRoutes.get("/products/facets", publicCatalogLimiter, getProductFacetsHandler);
+productRoutes.get("/products", publicCatalogLimiter, searchProductHandler);
+productRoutes.get("/products/:id", publicCatalogLimiter, searchProductByIdHandler);
 
 export default productRoutes;
