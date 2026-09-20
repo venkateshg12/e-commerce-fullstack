@@ -1,4 +1,7 @@
 import { z } from "zod";
+// The size enum is already defined for cart lines; a second copy here would be a second
+// source of truth for the same five values.
+import { productSizeSchema } from "./cart";
 
 export const categorySchema = z.object({
     name: z.string().trim().min(1, { message: "Category name is required" }).max(100),
@@ -26,6 +29,19 @@ export const brandSchema = z.object({
 
 export type BrandSchema = z.infer<typeof brandSchema>;
 
+/*
+  Stock belongs to a variant, not to the product: a shirt can be out of green/L while green/M is
+  on the shelf. `color` and `size` are optional because a product need not have either — a product
+  with no colours and no sizes carries a single variant with both absent.
+*/
+export const productVariantSchema = z.object({
+    color: z.string().trim().min(1).optional(),
+    size: productSizeSchema.optional(),
+    stock: z.coerce.number().int().min(0, { message: "Stock must be a non-negative integer" }),
+});
+
+export type ProductVariantSchema = z.infer<typeof productVariantSchema>;
+
 export const createProductSchema = z.object({
     title: z.string().trim().min(1, { message: "Title is required" }).max(255),
     description: z.string().trim().min(1, { message: "Description is required" }),
@@ -33,10 +49,12 @@ export const createProductSchema = z.object({
     // Brand id
     brand: z.string().trim().min(1, { message: "Brand is required" }),
     price: z.coerce.number().min(0, { message: "Price must be a non-negative number" }),
-    stock: z.coerce.number().int().min(0, { message: "Stock must be a non-negative integer" }),
     salesPercentage: z.coerce.number().min(0).max(100).default(0),
     colors: z.array(z.string()).default([]),
-    sizes: z.array(z.enum(["S", "M", "L", "XL", "XXL"])).default([]),
+    sizes: z.array(productSizeSchema).default([]),
+    // One row per (colour, size) the product is sold in. The service checks each row's colour and
+    // size against the two lists above.
+    variants: z.array(productVariantSchema).min(1, { message: "At least one stock row is required" }),
     // Sub-category id; must belong to `category`.
     subCategory: z.string().trim().min(1).optional(),
     status: z.enum(["active", "inactive"]).default("active"),
@@ -50,10 +68,10 @@ export const updateProductMetadataSchema = z.object({
     category: z.string().trim().min(1, { message: "Category cannot be empty" }).optional(),
     brand: z.string().trim().min(1, { message: "Brand cannot be empty" }).optional(),
     price: z.coerce.number().min(0, { message: "Price must be a non-negative number" }).optional(),
-    stock: z.coerce.number().int().min(0, { message: "Stock must be a non-negative integer" }).optional(),
     salesPercentage: z.coerce.number().min(0).max(100).optional(),
     colors: z.array(z.string()).optional(),
-    sizes: z.array(z.enum(["S", "M", "L", "XL", "XXL"])).optional(),
+    sizes: z.array(productSizeSchema).optional(),
+    variants: z.array(productVariantSchema).min(1, { message: "At least one stock row is required" }).optional(),
     // null clears the type (e.g. after the category changed).
     subCategory: z.string().trim().min(1).nullable().optional(),
     status: z.enum(["active", "inactive"]).optional(),

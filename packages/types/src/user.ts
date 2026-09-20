@@ -65,3 +65,21 @@ export type AddressSchema = z.infer<typeof addressSchema>;
 
 export const updateAddressSchema = addressSchema.partial();
 export type UpdateAddressSchema = z.infer<typeof updateAddressSchema>;
+
+export const updateProfileSchema = z.object({
+    name: z.string().trim().min(1, { message: "Name is required" }).max(255),
+});
+export type UpdateProfileSchema = z.infer<typeof updateProfileSchema>;
+
+export const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1, { message: "Current password is required" }),
+    newPassword: z.string().min(6, { message: "Password must be 6 characters long" }).max(255),
+    confirmNewPassword: z.string().min(6).max(255),
+}).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "Passwords do not match",
+    path: ["confirmNewPassword"],
+}).refine((data) => data.currentPassword !== data.newPassword, {
+    message: "New password must be different from the current password",
+    path: ["newPassword"],
+});
+export type ChangePasswordSchema = z.infer<typeof changePasswordSchema>;
