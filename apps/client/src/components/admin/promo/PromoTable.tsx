@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Promo } from "@/types/coupon.types";
+import type { Promo } from "@/types/promo.types";
 import { Check, Copy, Edit3, Tag, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -161,28 +161,34 @@ const PromoTable = ({
 
   return (
     <div className="w-full overflow-hidden rounded-xl border bg-card shadow-xs">
-      <Table className="min-w-195">
+      <Table className="min-w-225">
         <TableHeader className="bg-muted/50">
-          <TableRow className="grid grid-cols-12 gap-3 px-6 py-3 border-b hover:bg-transparent items-center">
-            <TableHead className="col-span-2 p-0 h-auto font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="w-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Promo Code
             </TableHead>
-            <TableHead className="col-span-2 p-0 h-auto  text-center font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+
+            <TableHead className="w-30 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Discount
             </TableHead>
-            <TableHead className="col-span-1  p-0 h-auto  font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+
+            <TableHead className="w-30 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Usage Limit
             </TableHead>
-            <TableHead className="col-span-1 p-0 h-auto font-semibold text-xs uppercase tracking-wider text-muted-foreground">
-              Min.Order
+
+            <TableHead className="w-30 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Min. Order
             </TableHead>
-            <TableHead className="col-span-2 p-0 text-center h-auto font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+
+            <TableHead className="w-55 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Validity
             </TableHead>
-            <TableHead className="col-span-1 p-0  h-auto font-semibold text-xs uppercase tracking-wider text-muted-foreground text-center">
+
+            <TableHead className="w-30 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Status
             </TableHead>
-            <TableHead className="col-span-2 p-0 h-auto font-semibold text-xs uppercase tracking-wider text-muted-foreground text-right">
+
+            <TableHead className="w-30 px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Actions
             </TableHead>
           </TableRow>
@@ -196,76 +202,86 @@ const PromoTable = ({
             return (
               <TableRow
                 key={promo._id}
-                className="grid grid-cols-12 gap-3 px-6 py-3.5 items-center hover:bg-muted/30 transition-colors text-sm font-poppins border-b"
+                className="text-sm transition-colors hover:bg-muted/30"
               >
-                <TableCell className="col-span-2 p-0 flex items-center gap-2">
-                  <span className="font-mono bg-muted/80 border px-2.5 py-1 rounded-md text-foreground text-xs font-bold tracking-wider">
-                    {promo.code}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(promo.code)}
-                    className="cursor-pointer text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
-                    title="Copy code"
-                  >
-                    {copiedCode === promo.code ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
+                <TableCell className="px-5 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md border bg-muted/80 px-2.5 py-1 font-mono text-xs font-bold tracking-wider text-foreground">
+                      {promo.code}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(promo.code)}
+                      className="cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      title="Copy code"
+                    >
+                      {copiedCode === promo.code ? (
+                        <Check className="size-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="size-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </TableCell>
 
-                <TableCell className="col-span-2 p-0 text-center font-semibold text-foreground">
+                <TableCell className="px-4 py-2 text-center font-semibold text-foreground">
                   {promo.percentage}% OFF
                 </TableCell>
 
-                <TableCell className="col-span-1 p-0  text-muted-foreground">
+                <TableCell className="px-4 py-2 text-center text-muted-foreground">
                   {promo.count} uses
                 </TableCell>
 
-                <TableCell className="col-span-1 p-0 text-center text-muted-foreground">
+                <TableCell className="px-4 py-2 text-center text-muted-foreground">
                   ₹{promo.minimumOrderValue ?? 0}
                 </TableCell>
 
-                <TableCell className="col-span-2 p-0 text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">
-                    {formatDate(promo.startsAt)}
-                  </span>
-                  <span className="text-muted-foreground/60 mx-1">-</span>
-                  <span className="font-medium text-foreground">
-                    {formatDate(promo.endsAt)}
-                  </span>
+                <TableCell className="px-4 py-2 text-xs">
+                  <div className="flex items-center gap-1 whitespace-nowrap justify-center">
+                    <span className="font-medium text-foreground">
+                      {formatDate(promo.startsAt)}
+                    </span>
+
+                    <span className="text-muted-foreground/60">-</span>
+
+                    <span className="font-medium text-foreground">
+                      {formatDate(promo.endsAt)}
+                    </span>
+                  </div>
                 </TableCell>
 
-                <TableCell className="col-span-1 p-0 text-center">
+                <TableCell className="px-4 py-2 text-center">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${status.className}`}
+                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${status.className}`}
                   >
                     {status.label}
                   </span>
                 </TableCell>
 
-                <TableCell className="col-span-2 p-0 flex items-center justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => onEdit(promo)}
-                    className="cursor-pointer text-muted-foreground hover:text-foreground h-8 w-8 hover:bg-muted"
-                    title="Edit Promo"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => handleDeleteClick(promo)}
-                    disabled={isDeleting}
-                    className="cursor-pointer text-muted-foreground hover:text-destructive h-8 w-8 hover:bg-destructive/10"
-                    title="Delete Promo"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <TableCell className="px-5 py-2">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => onEdit(promo)}
+                      className="size-8 cursor-pointer text-muted-foreground hover:bg-muted hover:text-foreground"
+                      title="Edit Promo"
+                    >
+                      <Edit3 className="size-4" />
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => handleDeleteClick(promo)}
+                      disabled={isDeleting}
+                      className="size-8 cursor-pointer text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      title="Delete Promo"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             );

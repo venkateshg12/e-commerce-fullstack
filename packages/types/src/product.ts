@@ -1,4 +1,7 @@
 import { z } from "zod";
+// The size enum is already defined for cart lines; a second copy here would be a second
+// source of truth for the same five values.
+import { productSizeSchema } from "./cart";
 
 export const categorySchema = z.object({
     name: z.string().trim().min(1, { message: "Category name is required" }).max(100),
@@ -6,16 +9,54 @@ export const categorySchema = z.object({
 
 export type CategorySchema = z.infer<typeof categorySchema>;
 
+// A product "type" (Shirt, Jeans…) is a sub-category that belongs to exactly one category.
+export const subCategorySchema = z.object({
+    name: z.string().trim().min(1, { message: "Type name is required" }).max(100),
+    category: z.string().trim().min(1, { message: "Category is required" }),
+});
+
+export type SubCategorySchema = z.infer<typeof subCategorySchema>;
+
+export const updateSubCategorySchema = z.object({
+    name: z.string().trim().min(1, { message: "Type name is required" }).max(100),
+});
+
+export type UpdateSubCategorySchema = z.infer<typeof updateSubCategorySchema>;
+
+export const brandSchema = z.object({
+    name: z.string().trim().min(1, { message: "Brand name is required" }).max(100),
+});
+
+export type BrandSchema = z.infer<typeof brandSchema>;
+
+/*
+  Stock belongs to a variant, not to the product: a shirt can be out of green/L while green/M is
+  on the shelf. `color` and `size` are optional because a product need not have either — a product
+  with no colours and no sizes carries a single variant with both absent.
+*/
+export const productVariantSchema = z.object({
+    color: z.string().trim().min(1).optional(),
+    size: productSizeSchema.optional(),
+    stock: z.coerce.number().int().min(0, { message: "Stock must be a non-negative integer" }),
+});
+
+export type ProductVariantSchema = z.infer<typeof productVariantSchema>;
+
 export const createProductSchema = z.object({
     title: z.string().trim().min(1, { message: "Title is required" }).max(255),
     description: z.string().trim().min(1, { message: "Description is required" }),
     category: z.string().trim().min(1, { message: "Category is required" }),
+    // Brand id
     brand: z.string().trim().min(1, { message: "Brand is required" }),
     price: z.coerce.number().min(0, { message: "Price must be a non-negative number" }),
-    stock: z.coerce.number().int().min(0, { message: "Stock must be a non-negative integer" }),
     salesPercentage: z.coerce.number().min(0).max(100).default(0),
     colors: z.array(z.string()).default([]),
-    sizes: z.array(z.enum(["S", "M", "L", "XL", "XXL"])).default([]),
+    sizes: z.array(productSizeSchema).default([]),
+    // One row per (colour, size) the product is sold in. The service checks each row's colour and
+    // size against the two lists above.
+    variants: z.array(productVariantSchema).min(1, { message: "At least one stock row is required" }),
+    // Sub-category id; must belong to `category`.
+    subCategory: z.string().trim().min(1).optional(),
     status: z.enum(["active", "inactive"]).default("active"),
 });
 
@@ -27,10 +68,12 @@ export const updateProductMetadataSchema = z.object({
     category: z.string().trim().min(1, { message: "Category cannot be empty" }).optional(),
     brand: z.string().trim().min(1, { message: "Brand cannot be empty" }).optional(),
     price: z.coerce.number().min(0, { message: "Price must be a non-negative number" }).optional(),
-    stock: z.coerce.number().int().min(0, { message: "Stock must be a non-negative integer" }).optional(),
     salesPercentage: z.coerce.number().min(0).max(100).optional(),
     colors: z.array(z.string()).optional(),
-    sizes: z.array(z.enum(["S", "M", "L", "XL", "XXL"])).optional(),
+    sizes: z.array(productSizeSchema).optional(),
+    variants: z.array(productVariantSchema).min(1, { message: "At least one stock row is required" }).optional(),
+    // null clears the type (e.g. after the category changed).
+    subCategory: z.string().trim().min(1).nullable().optional(),
     status: z.enum(["active", "inactive"]).optional(),
 });
 
@@ -49,6 +92,30 @@ export const changeProductCoverSchema = z.object({
 
 export type ChangeProductCoverSchema = z.infer<typeof changeProductCoverSchema>;
 
+export const setImageColorSchema = z.object({
+    publicId: z.string().trim().min(1, { message: "publicId is required" }),
+    color: z.string().trim(),
+});
+
+export type SetImageColorSchema = z.infer<typeof setImageColorSchema>;
+
+// Colours for the files in an images upload, index-aligned with the `images` file parts.
+// A single-file upload arrives as a bare string, so coerce to an array.
+export const uploadImageColorsSchema = z.object({
+    imageColors: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .transform((value) => {
+            if (value === undefined) return [] as string[];
+            return Array.isArray(value) ? value : [value];
+        }),
+    // Where in the product's image list to insert this batch. Omitted = append at the end.
+    // Arrives as a multipart text part, hence the coercion.
+    position: z.coerce.number().int().min(0).optional(),
+});
+
+export type UploadImageColorsSchema = z.infer<typeof uploadImageColorsSchema>;
+
 export const productSortSchema = z.enum(["recent", "price-low", "price-high"]);
 export type ProductSort = z.infer<typeof productSortSchema>;
 
@@ -58,6 +125,7 @@ export const productAppliedFilterListQuerySchema = z.object({
     brand: z.string().trim().optional(),
     color: z.string().trim().optional(),
     size: z.string().trim().optional(),
+    subCategory: z.string().trim().optional(),
     sort: productSortSchema.default("recent"),
 });
 

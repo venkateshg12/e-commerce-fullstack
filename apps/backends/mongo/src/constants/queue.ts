@@ -11,7 +11,8 @@ export const JOB_NAMES = {
     },
     IMAGE : {
         PROCESS_PRODUCT_IMAGES : 'process_product_images',
-        PROCESS_BANNER_IMAGES : 'process_banner_images'
+        PROCESS_BANNER_IMAGES : 'process_banner_images',
+        DELETE_CLOUDINARY_ASSETS : 'delete_cloudinary_assets'
     }
 }as const;
 

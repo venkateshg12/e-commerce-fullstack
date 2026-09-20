@@ -1,4 +1,4 @@
-import type { Promo } from "@/types/coupon.types";
+import type { Promo } from "@/types/promo.types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 

@@ -9,6 +9,15 @@ export const getRedisConfig = (): RedisOptions => ({
     enableReadyCheck: false
 });
 
+export const getRateLimiterRedisConfig = (): RedisOptions => ({
+    host: REDIS_HOST,
+    port: Number(REDIS_PORT),
+    maxRetriesPerRequest: 1, // Fail fast so circuit breaker trips to memory store
+    connectTimeout: 2000, // m ax time to wait for a Redis connection
+    commandTimeout: 1000, // max time to wait for a Redis command response (1 second)
+    enableReadyCheck: false
+});
+
 
 
 /* 

@@ -7,9 +7,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLogin } from "@/hooks/auth/useLogin";
 import { AlertPopup } from "@/components/ui/alert-popup";
-import { LoadingDots } from "@/constants/constant";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
-import type { AlertType } from "@/lib/types";
+import type { AlertType } from "@/types";
 
 
 const Signin = () => {
