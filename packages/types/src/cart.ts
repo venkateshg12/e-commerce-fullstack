@@ -8,6 +8,9 @@ export const addToCartSchema = z.object({
     quantity: z.number().int().min(1, { message: "Quantity must be at least 1" }).default(1),
     color: z.string().trim().optional(),
     size: productSizeSchema.optional(),
+    // Which of the product's photos was showing when this was added — must match one of
+    // product.images[].url, validated server-side, so this can't inject an arbitrary URL.
+    image: z.string().trim().optional(),
 });
 
 export type AddToCartSchema = z.infer<typeof addToCartSchema>;
@@ -34,6 +37,7 @@ export const syncCartItemSchema = z.object({
     quantity: z.number().int().min(1, { message: "Quantity must be at least 1" }),
     color: z.string().trim().optional(),
     size: productSizeSchema.optional(),
+    image: z.string().trim().optional(),
 });
 
 export const syncCartSchema = z.object({
