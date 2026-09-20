@@ -10,9 +10,13 @@ import RoleGuardLayout from "./components/layout/RoleGuardLayout";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
-import AdminCoupon from "./pages/admin/AdminCoupon";
+import AdminPromo from "./pages/admin/AdminPromo";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminSettings from "./pages/admin/AdminSettings";
+import Collections from "./pages/Collections";
+import ProductDetails from "./pages/ProductDetails";
+import Account from "./pages/Account";
+import CollectionDetails from "./pages/CollectionDetails";
 
 
 export const router = createBrowserRouter([
@@ -21,10 +25,22 @@ export const router = createBrowserRouter([
         path: "/",
         element: <UserLayout />,
         children: [
-            // 1. General Public Routes (Accessible to everyone)
+            // 1. Shared Routes (Accessible to everyone, logged in or not — no guard)
             {
                 index: true,
                 element: <LandingPage />
+            },
+            {
+                path: "collections",
+                element: <Collections />
+            },
+            {
+                path: "collections/:id",
+                element: <ProductDetails />
+            },
+            {
+                path: "collections/:id",
+                element: <CollectionDetails />
             },
 
             // 2. Guest-Only Routes (Redirects to /home if user IS logged in)
@@ -59,9 +75,14 @@ export const router = createBrowserRouter([
                 element: <ProtectedRoute />,
                 children: [
                     {
-                        path: "home",
-                        element: <HomePage />,
+                        path: "account",
+                        element: <Account />,
                     },
+                    {
+                        path: "home",
+                        element: <HomePage />
+                    }
+
                 ],
             },
         ],
@@ -87,8 +108,8 @@ export const router = createBrowserRouter([
                                 element: <AdminProducts />,
                             },
                             {
-                                path: 'coupons',
-                                element: <AdminCoupon />
+                                path: 'promos',
+                                element: <AdminPromo />
                             },
                             {
                                 path: 'orders',
