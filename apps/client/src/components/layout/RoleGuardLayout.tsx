@@ -9,7 +9,7 @@ export const RoleGuardLayout = ({ allow }: RoleGuardLayoutProps) => {
   const user = useAuthStore((state) => state.user);
 
   if (!user || !allow.includes(user.role)) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;
