@@ -1,3 +1,5 @@
+import { formatDiscount } from "@/lib/price";
+import { getTotalStock } from "@/lib/variants";
 import { Link } from "react-router-dom";
 import { ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +51,7 @@ const CustomerProductCard = ({ product }: CustomerProductCardProps) => {
 
           {hasSale ? (
             <Badge className="product-card-sale-badge">
-              -{salePercentage}%
+              -{formatDiscount(salePercentage)}%
             </Badge>
           ) : null}
         </div>
@@ -87,7 +89,7 @@ const CustomerProductCard = ({ product }: CustomerProductCardProps) => {
             ) : null}
           </div>
 
-          {product.stock <= 0 ? (
+          {getTotalStock(product.variants) <= 0 ? (
             <p className="product-card-out-of-stock">Out of stock</p>
           ) : null}
         </div>
