@@ -4,12 +4,14 @@ import {
     confirmCheckoutSessionSchema,
     createCheckoutSessionSchema,
     payWithPointsSchema,
+    resumeCheckoutSessionSchema,
 } from "@repo/types";
 import {
     confirmCheckoutSessionService,
     createCheckoutSessionService,
     getUserPointsService,
     payWithPointsService,
+    resumeCheckoutSessionService,
 } from "../services/checkout.service";
 
 export const createCheckoutHandler = catchError(
@@ -25,6 +27,14 @@ export const confirmCheckoutHandler = catchError(
         const data = confirmCheckoutSessionSchema.parse(req.body);
         const result = await confirmCheckoutSessionService(req.userId!, data);
         return res.status(OK).json(ok(result));
+    }
+);
+
+export const resumeCheckoutHandler = catchError(
+    async (req, res) => {
+        const data = resumeCheckoutSessionSchema.parse(req.body);
+        const session = await resumeCheckoutSessionService(req.userId!, data);
+        return res.status(OK).json(ok(session));
     }
 );
 
