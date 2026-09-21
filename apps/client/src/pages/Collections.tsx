@@ -1,4 +1,4 @@
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,6 +25,8 @@ import type { ProductSort } from "@/types";
 const Collections = () => {
   const {
     categories,
+    subCategories,
+    activeCategoryName,
     products,
     isInitialLoading,
     isFetching,
@@ -37,6 +39,8 @@ const Collections = () => {
     clearFilters,
     activeFilterBadges,
     brands,
+    search,
+    applySearch,
   } = useCollections();
 
   const skeletonGrid = (
@@ -68,10 +72,21 @@ const Collections = () => {
     return (
       <Card className="empty-card">
         <CardContent className="empty-card-content">
-          <p className="empty-title">No Products Found</p>
+          <p className="empty-title">
+            {search ? `No products match "${search}"` : "No Products Found"}
+          </p>
           {hasActiveFilters ? (
             <Button onClick={clearFilters} className=" cursor-pointer action-button">
               Clear Filters
+            </Button>
+          ) : null}
+          {search ? (
+            <Button
+              variant="outline"
+              onClick={() => applySearch("")}
+              className="cursor-pointer action-button"
+            >
+              Clear Search
             </Button>
           ) : null}
         </CardContent>
@@ -111,7 +126,7 @@ const Collections = () => {
       </section>
 
       <div className="content-container">
-        <div className={cn("top-bar", !activeFilterBadges.length && "top-bar-flush")}>
+        <div className={cn("top-bar", !activeFilterBadges.length && !search && "top-bar-flush")}>
 
           {/* mobile sheet component */}
           <div className="top-bar-actions">
@@ -130,6 +145,8 @@ const Collections = () => {
 
                 <CustomerFiltersPanel
                   categories={categories}
+                  subCategories={subCategories}
+                  activeCategoryName={activeCategoryName}
                   brands={brands}
                   filters={filters}
                   availableColors={availableColors}
@@ -140,6 +157,19 @@ const Collections = () => {
               </SheetContent>
             </Sheet>
           </div>
+
+          {/* The term came from the header search box, so this is where it can be seen and
+              dropped without retyping the URL. */}
+          {search ? (
+            <button
+              type="button"
+              onClick={() => applySearch("")}
+              className="search-chip"
+            >
+              Search: {search}
+              <X className="search-chip-icon" />
+            </button>
+          ) : null}
         </div>
 
         <div className="layout-grid">
@@ -147,6 +177,8 @@ const Collections = () => {
             <Card className="desktop-filter-card">
               <CustomerFiltersPanel
                 categories={categories}
+                subCategories={subCategories}
+                activeCategoryName={activeCategoryName}
                 brands={brands}
                 filters={filters}
                 availableColors={availableColors}
