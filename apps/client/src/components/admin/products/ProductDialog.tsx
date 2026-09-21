@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import ColorPicker from "./ColorPicker";
 import ImagePicker from "./ImagePicker";
 import SizeSelector from "./SizeSelector";
+import VariantStockEditor from "./VariantStockEditor";
 
 
 type ProductDialogProps = {
@@ -35,8 +36,9 @@ const ProductDialog = ({ open, onOpenChange, categories, brands, product, onSave
         addColor,
         removeColor,
         toggleSizes,
-        localFiles,
-        setLocalFiles,
+        updateVariantStock,
+        localImages,
+        setLocalImages,
         submit,
     } = useProductForm({
         open,
@@ -44,6 +46,14 @@ const ProductDialog = ({ open, onOpenChange, categories, brands, product, onSave
         onSaved,
         onClose: () => onOpenChange(false),
     });
+
+    // The discount is shown, never typed: the two amounts are the input, and this is what the
+    // backend ends up storing as `salesPercentage`.
+    const priceValue = Number(form.price) || 0;
+    const salePriceValue = Number(form.salePrice) || 0;
+    const isPriceValid = salePriceValue <= priceValue;
+    const savings = Math.max(priceValue - salePriceValue, 0);
+    const discountPercent = priceValue > 0 ? Math.round((savings / priceValue) * 100) : 0;
 
     const selectedCategory = categories.find((cat) => cat._id === form.category);
     // A plain `if`/ternary rather than `selectedCategory?.x` inline: the React Compiler's
@@ -184,41 +194,72 @@ const ProductDialog = ({ open, onOpenChange, categories, brands, product, onSave
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <Label className="font-poppins">Price ($)</Label>
-                            <Input
-                                type="number"
-                                placeholder="0"
-                                min="0"
-                                value={form.price}
-                                onChange={(e) => updateNumberField("price", e.target.value)}
-                                className="font-poppins"
-                            />
+                    <div className="space-y-3">
+                        <div className="space-y-0.5">
+                            <h3 className="font-poppins text-sm font-semibold text-foreground">Pricing</h3>
+                            <p className="font-poppins text-xs text-muted-foreground">
+                                Enter both amounts — the discount shoppers see is worked out from them.
+                            </p>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="font-poppins">Sale Percentage (%)</Label>
-                            <Input
-                                type="number"
-                                placeholder="0"
-                                min="0"
-                                max="100"
-                                value={form.salesPercentage}
-                                onChange={(e) => updateNumberField("salesPercentage", e.target.value)}
-                                className="font-poppins"
-                            />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label className="font-poppins">Original price (Rs.)</Label>
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    min="0"
+                                    value={form.price}
+                                    onChange={(e) => updateNumberField("price", e.target.value)}
+                                    className="font-poppins"
+                                />
+                                <p className="font-poppins text-xs text-muted-foreground">Struck through on the product page</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="font-poppins">Selling price (Rs.)</Label>
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    min="0"
+                                    value={form.salePrice}
+                                    onChange={(e) => updateNumberField("salePrice", e.target.value)}
+                                    className="font-poppins"
+                                />
+                                <p className="font-poppins text-xs text-muted-foreground">What the shopper actually pays</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="font-poppins">Discount</Label>
+                                {/* Read-only: it is the consequence of the two amounts above, and the
+                                    number the backend stores. */}
+                                <div className="flex h-9 items-center rounded-md border border-input bg-muted/40 px-3 font-poppins text-sm">
+                                    {isPriceValid ? (
+                                        discountPercent > 0 ? (
+                                            <span>{discountPercent}% off · saves Rs.{savings.toFixed(2)}</span>
+                                        ) : (
+                                            <span className="text-muted-foreground">No discount</span>
+                                        )
+                                    ) : (
+                                        <span className="text-destructive">Selling price is above the original</span>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="font-poppins">Stock</Label>
-                            <Input
-                                type="number"
-                                placeholder="0"
-                                min="0"
-                                value={form.stock}
-                                onChange={(e) => updateNumberField("stock", e.target.value)}
-                                className="font-poppins"
-                            />
+                    </div>
+
+                    <div className="space-y-3">
+                        <div className="space-y-0.5">
+                            <h3 className="font-poppins text-sm font-semibold text-foreground">Inventory</h3>
+                            <p className="font-poppins text-xs text-muted-foreground">
+                                Each colour and size is counted separately, so one can sell out while the rest stay on sale.
+                            </p>
                         </div>
+
+                        <VariantStockEditor
+                            colors={form.colors}
+                            sizes={form.sizes}
+                            variants={form.variants}
+                            onChange={updateVariantStock}
+                        />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -235,8 +276,9 @@ const ProductDialog = ({ open, onOpenChange, categories, brands, product, onSave
 
                     <ImagePicker
                         product={product}
-                        localFiles={localFiles}
-                        onLocalFilesChange={setLocalFiles}
+                        localImages={localImages}
+                        onLocalImagesChange={setLocalImages}
+                        palette={form.colors}
                     />
                 </div>
 
