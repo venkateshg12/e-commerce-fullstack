@@ -5,10 +5,16 @@ import { CartModel } from "../models/cartItem.model";
 import { PromoModel } from "../models/promo.model";
 import ProductModel from "../models/product.model";
 import { OrderModel } from "../models/order.model";
-import { BAD_REQUEST, NOT_FOUND } from "../constants/https";
+import { BAD_REQUEST, CONFLICT, NOT_FOUND } from "../constants/https";
 import { appAssert } from "../utils/errors";
-import { ConfirmCheckoutSessionSchema, CreateCheckoutSessionSchema, PayWithPointsSchema } from "@repo/types";
-import { razorpay } from "../utils/razorpay";
+import { getVariantStock, variantFilter } from "../utils/variants";
+import {
+    ConfirmCheckoutSessionSchema,
+    CreateCheckoutSessionSchema,
+    PayWithPointsSchema,
+    ResumeCheckoutSessionSchema,
+} from "@repo/types";
+import { callRazorpay, razorpay } from "../utils/razorpay";
 import { toSubUnits } from "../utils/currency";
 import { RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET } from "../constants/env";
 
@@ -55,7 +61,7 @@ export const createCheckoutSessionService = async (
             $in: cart.items.map((item) => item.product),
         },
     }).select(
-        "title brand price salesPercentage stock status images"
+        "title brand price salesPercentage variants status images"
     );
 
     // productId -> product
@@ -87,9 +93,9 @@ export const createCheckoutSessionService = async (
             "One or more cart items are no longer available"
         );
 
-        // Make sure the requested quantity is currently available.
+        // Make sure the requested quantity is currently available in THIS line's colour and size.
         appAssert(
-            product.stock >= cartItem.quantity,
+            getVariantStock(product, cartItem.color, cartItem.size) >= cartItem.quantity,
             BAD_REQUEST,
             `Insufficient stock for ${product.title}`
         );
@@ -184,12 +190,13 @@ export const createCheckoutSessionService = async (
     const orderId = new Types.ObjectId();
 
     // Create Razorpay payment order.
-    const razorpayOrder =
-        await razorpay.orders.create({
+    const razorpayOrder = await callRazorpay("create order", () =>
+        razorpay.orders.create({
             amount: toSubUnits(totalAmount),
             currency: "INR",
             receipt: `Order_${orderId}`,
-        });
+        })
+    );
 
 
     //  Snapshot the address.
@@ -291,6 +298,19 @@ export const confirmCheckoutSessionService = async (
         };
     }
 
+    /*
+      A cancelled order can still arrive here: the customer had the payment window open in one
+      tab, cancelled in another, then finished paying — and a Razorpay order can't be cancelled,
+      so that payment is captured. Everything below verifies the signature and the capture before
+      anything changes, so the money is real; honouring the order is the only outcome that doesn't
+      leave the customer charged for nothing.
+     */
+    appAssert(
+        order.orderStatus === "pending_payment" || order.orderStatus === "cancelled",
+        BAD_REQUEST,
+        "This order can no longer be paid for"
+    );
+
     appAssert(
         order.razorpayOrderId === data.razorpay_order_id,
         BAD_REQUEST,
@@ -334,10 +354,11 @@ export const confirmCheckoutSessionService = async (
 
     //  Fetch the payment directly from Razorpay.
 
-    const payment =
-        await razorpay.payments.fetch(
-            data.razorpay_payment_id
-        );
+    // A gateway failure here surfaces as a 502, which the client treats as "retry confirm" —
+    // correct, since the payment itself may well have gone through.
+    const payment = await callRazorpay("fetch payment", () =>
+        razorpay.payments.fetch(data.razorpay_payment_id)
+    );
 
     //  Make sure Razorpay payment belongs to the same Razorpay order.
 
@@ -389,25 +410,29 @@ export const confirmCheckoutSessionService = async (
                         await ProductModel.updateOne(
                             {
                                 _id: item.product,
-
-                                // Only update if enough stock is still available.
-                                stock: {
-                                    $gte: item.quantity,
-                                },
                             },
                             {
                                 $inc: {
-                                    stock: -item.quantity,
+                                    "variants.$[variant].stock": -item.quantity,
                                 },
                             },
                             {
+                                // Only this line's (colour, size) row, and only while it still
+                                // holds enough — the filter is the oversell guard.
+                                arrayFilters: [variantFilter(item)],
                                 session,
                             }
                         );
 
 
+                    /*
+                      `modifiedCount`, NOT `matchedCount`: with arrayFilters the match is on the
+                      product document, which exists whether or not any variant satisfied the
+                      filter. Asserting on matchedCount would let a sold-out variant through
+                      while writing nothing.
+                     */
                     appAssert(
-                        updated.matchedCount > 0,
+                        updated.modifiedCount > 0,
                         BAD_REQUEST,
                         "One or more products are out of stock"
                     );
@@ -441,19 +466,32 @@ export const confirmCheckoutSessionService = async (
                     );
                 }
 
-                await CartModel.updateOne(
-                    {
-                        user: userId,
-                    },
-                    {
-                        $set: {
-                            items: [],
+                /*
+                  Remove only the lines this order actually bought, not the whole cart.
+                  A payment can now be completed long after checkout (see
+                  resumeCheckoutSessionService), by which time the user may have built a
+                  different cart — wiping that would be silent data loss. For an ordinary
+                  checkout the order's items ARE the cart, so it still ends up empty.
+                  A line is identified by (product, color, size); `null` matches a field that
+                  is missing, mirroring the cart's own `(a || "") === (b || "")` rule.
+                 */
+                for (const item of order.items) {
+                    await CartModel.updateOne(
+                        { user: userId },
+                        {
+                            $pull: {
+                                items: {
+                                    product: item.product,
+                                    color: item.color ?? null,
+                                    size: item.size ?? null,
+                                },
+                            },
                         },
-                    },
-                    {
-                        session,
-                    }
-                );
+                        {
+                            session,
+                        }
+                    );
+                }
                 order.paymentStatus = "paid";
                 order.orderStatus = "placed";
 
@@ -461,6 +499,9 @@ export const confirmCheckoutSessionService = async (
                     data.razorpay_payment_id;
 
                 order.paidAt = new Date();
+                // Reviving a cancelled order (see above) — it's live again, so drop the cancel.
+                order.cancelledAt = null;
+                order.cancelledBy = null;
                 await order.save({
                     session,
                 });
@@ -473,6 +514,100 @@ export const confirmCheckoutSessionService = async (
 
     return {
         _id: String(order._id),
+    };
+};
+
+/**
+ * Hands back the Razorpay session for an order that was abandoned at the gateway, so it can be
+ * paid without building a new order from the cart. The Razorpay order, the item snapshot, the
+ * address and the amount all already exist on the stored row, and confirm works purely off that
+ * row — so nothing new is created here.
+ */
+export const resumeCheckoutSessionService = async (
+    userId: string | Types.ObjectId,
+    data: ResumeCheckoutSessionSchema
+) => {
+    appAssert(mongoose.isValidObjectId(data.orderId), BAD_REQUEST, "Invalid order ID");
+
+    const order = await OrderModel.findOne({ _id: data.orderId, user: userId });
+    appAssert(order, NOT_FOUND, "Order not found");
+
+    const code = String(order._id).slice(-8).toUpperCase();
+
+    appAssert(order.paymentStatus !== "paid", CONFLICT, "This order has already been paid");
+    appAssert(
+        order.orderStatus === "pending_payment",
+        BAD_REQUEST,
+        "This order can no longer be paid for"
+    );
+
+    // If Razorpay already has this order as paid, the customer WAS charged but our confirm never
+    // ran (the browser closed, the network dropped). Opening a second payment would double-charge
+    // them, so refuse and point at support. Recovering it automatically means confirming
+    // server-side without the client's signature, which is a separate, security-sensitive change.
+    const razorpayOrder = await callRazorpay("fetch order", () =>
+        razorpay.orders.fetch(order.razorpayOrderId)
+    );
+
+    appAssert(
+        razorpayOrder.status !== "paid",
+        CONFLICT,
+        `We've already received a payment for order #${code}. Please contact support with this order number.`
+    );
+
+    // confirm only checks these AFTER the money is captured, so for an order that may be days old
+    // they are verified here, before the gateway opens. Otherwise a customer could be charged for
+    // something that can no longer be fulfilled.
+    const products = await ProductModel.find({
+        _id: { $in: order.items.map((item) => item.product) },
+    }).select("title stock status");
+
+    const productById = new Map(products.map((product) => [String(product._id), product]));
+
+    for (const item of order.items) {
+        const product = productById.get(String(item.product));
+
+        appAssert(
+            product && product.status === "active",
+            BAD_REQUEST,
+            "One or more items in this order are no longer available"
+        );
+        appAssert(
+            getVariantStock(product, item.color, item.size) >= item.quantity,
+            BAD_REQUEST,
+            `Insufficient stock for ${product.title}`
+        );
+    }
+
+    if (order.promoCode) {
+        const promo = await PromoModel.findOne({ code: order.promoCode });
+        const now = new Date();
+
+        appAssert(
+            promo && now >= promo.startsAt && now <= promo.endsAt && promo.count > 0,
+            BAD_REQUEST,
+            "The promo code used on this order is no longer available"
+        );
+    }
+
+    return {
+        razorpay: {
+            keyId: RAZORPAY_KEY_ID,
+            orderId: order.razorpayOrderId,
+            // Rebuilt from the stored rupee total with the same conversion create-session used.
+            amount: toSubUnits(order.totalAmount),
+            currency: "INR",
+        },
+
+        order: {
+            _id: String(order._id),
+            totalItems: order.totalItems,
+            subtotal: order.totalAmount + order.discountAmount,
+            discountAmount: order.discountAmount,
+            totalAmount: order.totalAmount,
+            paymentStatus: order.paymentStatus,
+            orderStatus: order.orderStatus,
+        },
     };
 };
 
@@ -526,7 +661,7 @@ export const payWithPointsService = async (
             $in: cart.items.map((item) => item.product),
         },
     }).select(
-        "title brand price salesPercentage stock status images"
+        "title brand price salesPercentage variants status images"
     );
 
     const productMap = new Map(
@@ -558,7 +693,7 @@ export const payWithPointsService = async (
         );
 
         appAssert(
-            product.stock >= cartItem.quantity,
+            getVariantStock(product, cartItem.color, cartItem.size) >= cartItem.quantity,
             BAD_REQUEST,
             `Insufficient stock for ${product.title}`
         );
@@ -680,23 +815,23 @@ export const payWithPointsService = async (
                     await ProductModel.updateOne(
                         {
                             _id: item.product,
-                            stock: {
-                                $gte: item.quantity,
-                            },
                             status: "active",
                         },
                         {
                             $inc: {
-                                stock: -item.quantity,
+                                "variants.$[variant].stock": -item.quantity,
                             },
                         },
                         {
+                            arrayFilters: [variantFilter(item)],
                             session,
                         }
                     );
 
+                // See the note on the other decrement: matchedCount counts the document, so the
+                // guard has to be modifiedCount.
                 appAssert(
-                    updated.matchedCount > 0,
+                    updated.modifiedCount > 0,
                     BAD_REQUEST,
                     "One or more cart items are out of stock"
                 );
