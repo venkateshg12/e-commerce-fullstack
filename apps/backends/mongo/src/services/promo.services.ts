@@ -19,6 +19,17 @@ export function mapPromos(item: PromoDocument) {
     };
 }
 
+// What a shopper can use right now: in its date window and with uses left. Biggest discount first.
+export const getActivePromosService = async () => {
+    const now = new Date();
+    const promos = await PromoModel.find({
+        startsAt: { $lte: now },
+        endsAt: { $gte: now },
+        count: { $gt: 0 },
+    }).sort({ percentage: -1, endsAt: 1 });
+    return promos.map((item) => mapPromos(item.toObject()));
+};
+
 export const getPromoService = async () => {
     const promos = await PromoModel.find({}).sort({ createdAt: -1 });
     return promos.map((item) => mapPromos(item.toObject()));

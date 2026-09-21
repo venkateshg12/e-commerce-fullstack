@@ -2,12 +2,20 @@ import { CREATED, OK } from "../constants/https";
 import { catchError, ok } from "../utils";
 import { applyPromoSchema, createPromoSchema, updatePromoSchema } from "@repo/types";
 import {
+    getActivePromosService,
     getPromoService,
     createPromoService,
     updatePromoService,
     deletePromoService,
     applyPromoService,
 } from "../services/promo.services";
+
+export const getActivePromosHandler = catchError(
+    async (req, res) => {
+        const promos = await getActivePromosService();
+        return res.status(OK).json(ok({ items: promos }));
+    }
+);
 
 export const getPromoHandler = catchError(
     async (req, res) => {
