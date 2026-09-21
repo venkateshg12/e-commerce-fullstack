@@ -1,143 +1,226 @@
+import type { IncomingMessage } from "http";
+import ipaddr from "ipaddr.js";
+import proxyaddr from "proxy-addr";
+
 import { TRUSTED_PROXY_CIDRS } from "../../constants/env";
 import type { RateLimiterRequest } from "../../types/rateLimiter.types";
 
-/**
- * Resolves the client IP that every IP-derived rate limit is keyed on.
- *
- * The rule is that a header is only evidence if it was written by infrastructure we control.
- * `cf-connecting-ip` and `true-client-ip` are set by Cloudflare and Akamai at their edge, but
- * nothing stops any client from sending them too — so they are read ONLY when the connection
- * itself arrives from a proxy listed in TRUSTED_PROXY_CIDRS. Without that check, an attacker sends
- * a different value on every request, lands in a different bucket each time, and no IP limit —
- * including the punitive login lockout — ever fires.
- *
- * With no trusted proxies configured (the default), the only source is Express's own `req.ip`,
- * which honours `app.set("trust proxy", …)` and is therefore as trustworthy as that setting.
+/*
+  Used when no trustworthy client IP can be determined.
  */
-
-// Shared by every unattributable request, rather than being silently merged into localhost's
-// bucket the way a 127.0.0.1 fallback would.
 export const UNKNOWN_IP = "unknown";
 
-const EDGE_HEADERS = ["cf-connecting-ip", "true-client-ip"] as const;
+/*
+  Headers provided by trusted edge infrastructure.
+ 
+ These headers are ONLY trusted when the actual TCP peer belongs
+  to TRUSTED_PROXY_CIDRS.
+ */
+const EDGE_HEADERS = [
+    "cf-connecting-ip",
+    "true-client-ip",
+] as const;
 
-const trustedRanges = parseCidrList(TRUSTED_PROXY_CIDRS);
+/*
+  Compile trusted proxy configuration once at startup.
+ */
+const trustProxy = createTrustProxy(TRUSTED_PROXY_CIDRS);
 
-export function extractClientIp(req: RateLimiterRequest): string {
-    // The peer that actually opened the socket — the only value a remote client cannot choose.
+/*
+  Extract the client IP used by the rate limiter.
+ 
+  Security model:
+  1. Determine the actual TCP peer.
+  2. Only trust Cloudflare/Akamai identity headers when that peer
+     belongs to infrastructure we explicitly trust.
+  3. Otherwise resolve the client IP using proxy-addr and our
+     trusted-proxy configuration.
+  4. Never manually trust X-Forwarded-For.
+  5. Return UNKNOWN_IP if no valid IP can be determined.
+ */
+export function extractClientIp(
+    req: RateLimiterRequest
+): string {
     const peer = req.socket?.remoteAddress;
 
-    if (peer && isTrustedProxy(normalizeIp(peer))) {
-        for (const header of EDGE_HEADERS) {
-            const value = getHeaderValue(req, header);
-            if (value && isValidIp(value)) {
-                return normalizeIp(value);
+    /*
+     * First check whether the actual connection came from one
+     * of our trusted edge proxies.
+     */
+    if (peer) {
+        const normalizedPeer = normalizeIp(peer);
+
+        if (trustProxy(normalizedPeer)) {
+            for (const header of EDGE_HEADERS) {
+                const value = getHeaderValue(req, header);
+
+                if (!value) {
+                    continue;
+                }
+
+                const normalizedValue = normalizeIp(value);
+
+                if (isValidIp(normalizedValue)) {
+                    return normalizedValue;
+                }
             }
         }
     }
 
     /*
-      `req.ip` already accounts for `x-forwarded-for` under Express's `trust proxy` setting, which
-      counts hops from the RIGHT — the end a client can't forge past. Reading the header here by
-      hand could only take the leftmost entry, which is the attacker-supplied one.
+     * Resolve the client IP using proxy-addr.
+     *
+     * proxy-addr:
+     * - understands X-Forwarded-For
+     * - walks the proxy chain from the application outward
+     * - stops at the first untrusted address
+     * - supports IPv4 and IPv6
      */
-    if (req.ip && isValidIp(req.ip)) {
-        return normalizeIp(req.ip);
+
+    
+    try {
+        const xForwardedFor = getHeaderValue(req, "x-forwarded-for");
+        const adaptedReq = {
+            headers: {
+                "x-forwarded-for": xForwardedFor,
+            },
+            socket: req.socket,
+        } as unknown as IncomingMessage;
+
+        const resolvedIp = proxyaddr(adaptedReq, trustProxy);
+
+        if (resolvedIp) {
+            const normalizedIp = normalizeIp(resolvedIp);
+
+            if (isValidIp(normalizedIp)) {
+                return normalizedIp;
+            }
+        }
+    } catch {
+        /*
+         * Never allow malformed proxy information to become
+         * a rate-limit key.
+         */
     }
 
     return UNKNOWN_IP;
 }
 
-function getHeaderValue(req: RateLimiterRequest, headerName: string): string | undefined {
-    if (!req.headers) return undefined;
+/**
+ * Compile trusted proxy CIDRs.
+ *
+ * Example:
+ *
+ * TRUSTED_PROXY_CIDRS=10.20.30.0/24,2001:db8::/32
+ */
+function createTrustProxy(
+    raw: string
+): (ip: string, index?: number) => boolean {
+    const entries = raw
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
 
-    if ("get" in req.headers && typeof req.headers.get === "function") {
+    try {
+        const compiled = proxyaddr.compile(entries);
+
+        return (ip: string, index: number = 0) => {
+            return compiled(ip, index);
+        };
+    } catch (error) {
+        throw new Error(
+            `Invalid TRUSTED_PROXY_CIDRS configuration: ${
+                error instanceof Error
+                    ? error.message
+                    : String(error)
+            }`
+        );
+    }
+}
+
+/**
+ * Read a header from either:
+ *
+ * - Fetch Headers / Headers-like objects
+ * - Node / Express IncomingHttpHeaders
+ */
+function getHeaderValue(
+    req: RateLimiterRequest,
+    headerName: string
+): string | undefined {
+    if (!req.headers) {
+        return undefined;
+    }
+
+    /*
+     * Headers-like API.
+     */
+    if (
+        "get" in req.headers &&
+        typeof req.headers.get === "function"
+    ) {
         return req.headers.get(headerName) ?? undefined;
     }
 
-    const headersObj = req.headers as Record<string, string | string[] | undefined>;
-    const val = headersObj[headerName.toLowerCase()] ?? headersObj[headerName];
-    if (Array.isArray(val)) {
-        return val[0];
+    /*
+     * Node / Express headers object.
+     */
+    const headersObj = req.headers as Record<
+        string,
+        string | string[] | undefined
+    >;
+
+    const value =
+        headersObj[headerName.toLowerCase()] ??
+        headersObj[headerName];
+
+    /*
+     * Don't arbitrarily select one value when multiple
+     * edge identity headers are present.
+     */
+    if (Array.isArray(value)) {
+        if (value.length !== 1) {
+            return undefined;
+        }
+
+        return value[0];
     }
-    return val;
+
+    return value;
 }
-
-function normalizeIp(ip: string): string {
-    const trimmed = ip.trim();
-    // IPv4-mapped IPv6, as Node reports for an IPv4 client on a dual-stack socket.
-    if (trimmed.startsWith("::ffff:")) {
-        return trimmed.substring(7);
-    }
-    if (trimmed === "::1") {
-        return "127.0.0.1";
-    }
-    return trimmed;
-}
-
-function isValidIp(ip: string): boolean {
-    if (!ip || typeof ip !== "string") return false;
-    return isIpv4(ip.trim()) || isIpv6(ip.trim());
-}
-
-function isIpv4(ip: string): boolean {
-    const parts = ip.split(".");
-    if (parts.length !== 4) return false;
-    return parts.every((part) => {
-        if (!/^\d{1,3}$/.test(part)) return false;
-        const octet = Number(part);
-        return octet >= 0 && octet <= 255;
-    });
-}
-
-/*
-  Deliberately stricter than "hex digits and colons", which the previous version accepted — that
-  let "::::" and "ffff" through as addresses, and a bogus value is still a usable bucket key.
-*/
-function isIpv6(ip: string): boolean {
-    if (!ip.includes(":")) return false;
-    if (ip.split("::").length > 2) return false;
-
-    const groups = ip.split(":");
-    if (groups.length > 8) return false;
-
-    return groups.every((group) => group === "" || /^[0-9a-fA-F]{1,4}$/.test(group));
-}
-
-type CidrRange = { base: number; mask: number };
 
 /**
- * IPv4 CIDR matching only. An IPv6 proxy address is not matched and so is not trusted, which fails
- * safe: the headers are ignored and `req.ip` is used instead.
+ * Normalize an IP using ipaddr.js.
+ *
+ * Examples:
+ *
+ * ::ffff:192.168.1.10
+ *     -> 192.168.1.10
+ *
+ * ::1
+ *     -> ::1
  */
-function parseCidrList(raw: string): CidrRange[] {
-    return raw
-        .split(",")
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-        .flatMap((entry) => {
-            const [address, bitsRaw] = entry.split("/");
-            const bits = bitsRaw === undefined ? 32 : Number(bitsRaw);
+function normalizeIp(ip: string): string {
+    const trimmed = ip.trim();
 
-            if (!isIpv4(address) || !Number.isInteger(bits) || bits < 0 || bits > 32) {
-                console.warn(`Ignoring invalid TRUSTED_PROXY_CIDRS entry: "${entry}"`);
-                return [];
-            }
+    if (!isValidIp(trimmed)) {
+        return trimmed;
+    }
 
-            // A /0 would trust everything, so the shift is written to stay correct at the edges.
-            const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
-            return [{ base: (ipv4ToInt(address) & mask) >>> 0, mask }];
-        });
+    try {
+        return ipaddr.process(trimmed).toString();
+    } catch {
+        return trimmed;
+    }
 }
 
-function ipv4ToInt(ip: string): number {
-    return ip
-        .split(".")
-        .reduce((acc, octet) => ((acc << 8) + Number(octet)) >>> 0, 0);
-}
+/**
+ * Validate IPv4 or IPv6.
+ */
+function isValidIp(ip: string): boolean {
+    if (!ip || typeof ip !== "string") {
+        return false;
+    }
 
-function isTrustedProxy(ip: string): boolean {
-    if (trustedRanges.length === 0 || !isIpv4(ip)) return false;
-    const value = ipv4ToInt(ip);
-    return trustedRanges.some((range) => ((value & range.mask) >>> 0) === range.base);
+    return ipaddr.isValid(ip.trim());
 }
