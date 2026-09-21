@@ -2,7 +2,7 @@ import { createPromo } from "@/api/promo";
 import queryClient from "@/lib/queryClient";
 import { usePromoStore } from "@/store/promo.store";
 import type { FailureResponse, SuccessResponse } from "@/types";
-import type { AdminPromosResponse, PromoFormValues } from "@/types/coupon.types";
+import type { AdminPromosResponse, PromoFormValues } from "@/types/promo.types";
 import { useMutation } from "@tanstack/react-query";
 
 export const useCreatePromo = () => {
