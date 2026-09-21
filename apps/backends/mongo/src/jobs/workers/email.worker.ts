@@ -1,15 +1,17 @@
 import { Job, Worker } from "bullmq";
 import { JOB_NAMES, QUEUE_NAMES } from "../../constants/queue";
-import { processVerifyEmail } from "../processors/email.processor";
-import { VerifyEmailPayload } from "../interfaces/jobPayload";
+import { processPasswordReset, processVerifyEmail } from "../processors/email.processor";
+import { PasswordResetPayload, VerifyEmailPayload } from "../interfaces/jobPayload";
 import { redisConnection } from "../redis/connection";
 
 export const emailWorker = new Worker(
     QUEUE_NAMES.EMAIL,
-    async (job: Job<VerifyEmailPayload>) => {
+    async (job: Job<any>) => {
         switch (job.name) {
             case JOB_NAMES.EMAIL.VERIFY_EMAIL:
-                return await processVerifyEmail(job);
+                return await processVerifyEmail(job as Job<VerifyEmailPayload>);
+            case JOB_NAMES.EMAIL.PASSWORD_RESET:
+                return await processPasswordReset(job as Job<PasswordResetPayload>);
             default:
                 throw new Error(`Unknown job name: ${job.name}`);
         }
@@ -33,4 +35,7 @@ emailWorker.on('failed', (job, err) => {
 });
 emailWorker.on('stalled', (jobId) => {
     console.warn(`[Worker Alert] Job ${jobId} HAS STALLED! Check CPU load / Event loop freeze.`);
+});
+emailWorker.on('error', (err) => {
+    console.error(`[Worker Connection Error] ${err.message}`);
 });
