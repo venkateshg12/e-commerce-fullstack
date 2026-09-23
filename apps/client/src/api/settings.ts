@@ -7,6 +7,12 @@ export const getBanners = async (): Promise<SuccessResponse<AdminBannerResponse>
     return response.data;
 }
 
+// Removes a banner from the storefront and frees its Cloudinary asset (the server queues that).
+export const deleteBanner = async (bannerId: string): Promise<SuccessResponse<VerifiedResponse>> => {
+    const response = await API.delete<SuccessResponse<VerifiedResponse>>(`/settings/banners/${bannerId}`);
+    return response.data;
+};
+
 export const uploadBanners = async (formData: FormData): Promise<SuccessResponse<VerifiedResponse>> => {
     const response = await API.post<SuccessResponse<VerifiedResponse>>("/settings/banners", formData, {
         headers: {
