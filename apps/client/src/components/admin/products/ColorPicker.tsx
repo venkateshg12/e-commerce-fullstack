@@ -49,11 +49,13 @@ const ColorPicker = ({ colors = [], onAddColor, onRemoveColor }: ColorPickerProp
         </div>
 
         {colors.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-1">
+          // Chips are a fixed h-7 (28px), so max-h-16 (64px = 28 + 8 gap + 28) shows exactly
+          // two rows and scrolls for the rest.
+          <div className="scrollbar-slim flex flex-wrap content-start gap-2 max-h-16 overflow-y-auto pr-1">
             {colors.map((color) => (
               <span
                 key={color}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-2xs transition-colors"
+                className="inline-flex h-7 items-center gap-1.5 px-2.5 rounded-full text-xs font-mono border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-2xs transition-colors"
               >
                 <span
                   className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
