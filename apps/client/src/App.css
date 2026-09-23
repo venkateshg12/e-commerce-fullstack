@@ -32,6 +32,7 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
   --color-chart-5: var(--chart-5);
+  --color-dash-accent: var(--dash-accent);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
@@ -99,6 +100,9 @@
   --scrollbar-track: oklch(0.98 0.001 286.375);
   --scrollbar-thumb: oklch(0.87 0.004 286.32);
   --scrollbar-thumb-hover: oklch(0.75 0.008 286.32);
+  /* The admin dashboard's one data hue. Validated (dataviz validator) against both surfaces:
+     chart-4 passes on light; on dark it is too dim (2.1:1), so dark steps up to chart-2. */
+  --dash-accent: var(--chart-4);
 }
 
 .dark {
@@ -136,6 +140,7 @@
   --scrollbar-track: oklch(0.19 0.005 285.823);
   --scrollbar-thumb: oklch(0.32 0.006 286.033);
   --scrollbar-thumb-hover: oklch(0.44 0.008 286.033);
+  --dash-accent: var(--chart-2);
 }
 
 @layer base {
@@ -215,15 +220,26 @@
   }
 }
 
+@keyframes loading-dot-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+/* Opacity only — the old 102% → 100% scale read as a zoom on every photo swap. */
 @keyframes gallery-fade {
   from {
     opacity: 0;
-    transform: scale(1.02);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -285,8 +301,18 @@
     @apply absolute -right-1 -top-1 inline-flex min-w-1 items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold leading-5 text-black;
   }
 
+  /* Same layout as NavTextLink (icon + label), with a little more gap to make room for the badge. */
+  .wishlist-link {
+    @apply inline-flex items-center gap-3;
+  }
+
+  .wishlist-icon-wrap {
+    @apply relative inline-flex;
+  }
+
+  /* Pinned to the heart's top-right corner; its right edge ends where the label's gap begins. */
   .wishlist-badge {
-    @apply absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold leading-5 text-black;
+    @apply absolute -right-2 -top-2 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-semibold leading-none text-black;
   }
 
   .mobile-wrap {
@@ -860,7 +886,8 @@
   .scrollbar-slim::-webkit-scrollbar,
   .desktop-filter-card::-webkit-scrollbar,
   .pdp-related-rail::-webkit-scrollbar,
-  .gallery-thumbs::-webkit-scrollbar {
+  .gallery-thumbs::-webkit-scrollbar,
+  .pdp-more-colors::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
@@ -868,14 +895,16 @@
   .scrollbar-slim::-webkit-scrollbar-track,
   .desktop-filter-card::-webkit-scrollbar-track,
   .pdp-related-rail::-webkit-scrollbar-track,
-  .gallery-thumbs::-webkit-scrollbar-track {
+  .gallery-thumbs::-webkit-scrollbar-track,
+  .pdp-more-colors::-webkit-scrollbar-track {
     background: transparent;
   }
 
   .scrollbar-slim::-webkit-scrollbar-thumb,
   .desktop-filter-card::-webkit-scrollbar-thumb,
   .pdp-related-rail::-webkit-scrollbar-thumb,
-  .gallery-thumbs::-webkit-scrollbar-thumb {
+  .gallery-thumbs::-webkit-scrollbar-thumb,
+  .pdp-more-colors::-webkit-scrollbar-thumb {
     border: 2px solid transparent;
     background-clip: content-box;
   }
@@ -900,8 +929,10 @@
     @apply text-xl font-semibold text-foreground;
   }
 
+  /* Two per row on a phone: one full-width card per row wastes the screen and makes browsing a
+     catalogue a lot of scrolling. Matches the wishlist and home grids. */
   .product-grid {
-    @apply grid gap-5 sm:grid-cols-2 xl:grid-cols-3;
+    @apply grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-3;
   }
 
   /*
@@ -910,6 +941,28 @@
    */
   .product-grid-busy {
     @apply pointer-events-none opacity-60 transition-opacity duration-200;
+  }
+
+  /* Admin tables page through their rows rather than loading every one. */
+  .admin-pager {
+    @apply mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3;
+  }
+
+  .admin-pager-count {
+    @apply font-ubuntuMono text-xs tracking-wide text-slate-500;
+  }
+
+  .admin-pager-actions {
+    @apply flex items-center gap-2;
+  }
+
+  /* Sits under the grid: the catalogue arrives a page at a time, this asks for the next one. */
+  .load-more-row {
+    @apply mt-6 flex flex-col items-center gap-2;
+  }
+
+  .load-more-count {
+    @apply font-ubuntuMono text-xs tracking-wide text-slate-500;
   }
 
   .product-skeleton-media {
@@ -999,13 +1052,28 @@
     @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
   }
 
-  /* Customer product card */
-  .product-card {
-    @apply flex h-full flex-col overflow-hidden rounded-none border-border/60 bg-card/80 p-0 transition hover:border-primary/50 hover:shadow-md;
+  /* Admin: the colour dropdown on each product photo tile */
+  .image-color-trigger {
+    @apply h-7 w-full cursor-pointer border-none bg-transparent px-1.5 text-[11px] font-medium shadow-none;
   }
 
+  .image-color-option {
+    @apply flex items-center gap-2.5 py-0.5;
+  }
+
+  /* Big enough to judge the colour by — the hex beside it is hard to read as a colour. */
+  .image-color-swatch {
+    @apply inline-block h-6 w-6 shrink-0 rounded-full border border-foreground shadow-xs;
+  }
+
+  /* Customer product card */
+  .product-card {
+    @apply relative flex h-full flex-col overflow-hidden rounded-none border-border/60 bg-card/80 p-0 transition hover:border-primary/50 hover:shadow-md;
+  }
+
+  /* 3:4 — the shape of the catalogue's photos, used for every product image on the site. */
   .product-card-media {
-    @apply relative aspect-4/5 w-full -mt-5 overflow-hidden bg-muted;
+    @apply relative aspect-3/4 w-full -mt-5 overflow-hidden bg-muted;
   }
 
   .product-card-image {
@@ -1021,15 +1089,15 @@
   }
 
   .product-card-sale-badge {
-    @apply absolute left-3 top-3 rounded-none bg-primary text-primary-foreground;
+    @apply absolute left-2 top-2 rounded-none px-1.5 py-0.5 text-[10px] bg-primary text-primary-foreground sm:left-3 sm:top-3 sm:px-2 sm:text-xs;
   }
 
   .product-card-body {
-    @apply flex flex-1 flex-col gap-2 p-4;
+    @apply flex flex-1 flex-col gap-1.5 p-3 sm:gap-2 sm:p-4;
   }
 
   .product-card-brand {
-    @apply text-xs uppercase tracking-[0.14em] text-muted-foreground;
+    @apply truncate text-[10px] uppercase tracking-[0.12em] text-muted-foreground sm:text-xs sm:tracking-[0.14em];
   }
 
   .product-card-title {
@@ -1049,11 +1117,11 @@
   }
 
   .product-card-price-row {
-    @apply mt-auto flex items-baseline gap-2 pt-2;
+    @apply mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-2;
   }
 
   .product-card-price {
-    @apply text-base font-semibold text-foreground;
+    @apply text-sm font-semibold text-foreground sm:text-base;
   }
 
   .product-card-original-price {
@@ -1062,6 +1130,63 @@
 
   .product-card-out-of-stock {
     @apply text-xs font-medium text-destructive;
+  }
+
+  /*
+   * Move-to-cart affordance over the wishlist photo. Hidden until the card is hovered on
+   * pointer devices, but always visible on touch screens, where hover never fires.
+   * `group-hover/card` comes from the Card primitive's own group marker.
+   */
+  .wishlist-move-overlay {
+    @apply absolute inset-x-0 bottom-0 flex flex-col gap-2 bg-background/95 p-2 backdrop-blur-sm transition-opacity sm:opacity-0 sm:group-hover/card:opacity-100 sm:focus-within:opacity-100;
+  }
+
+  .wishlist-move-button {
+    @apply h-9 w-full cursor-pointer text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .wishlist-size-prompt {
+    @apply text-center text-[11px] font-medium text-muted-foreground;
+  }
+
+  .wishlist-size-options {
+    @apply flex flex-wrap justify-center gap-1;
+  }
+
+  .wishlist-size-option {
+    @apply h-7 min-w-7 cursor-pointer rounded-md border border-border px-1.5 text-xs font-medium transition hover:border-primary hover:text-primary disabled:cursor-not-allowed;
+  }
+
+  /* Wishlist item card — remove button pinned to the card, same corner as the sale badge */
+  .wishlist-remove-button {
+    @apply absolute right-3 top-3 z-10 flex size-8 cursor-pointer items-center justify-center rounded-full bg-background/90 text-destructive shadow-sm transition hover:scale-110;
+  }
+
+  .wishlist-remove-icon {
+    @apply size-4 fill-current;
+  }
+
+  /* ---------- Wishlist page (/wishlist) ---------- */
+
+  .wishlist-page-wrap {
+    @apply min-h-screen bg-background;
+  }
+
+  .wishlist-container {
+    @apply mx-auto max-w-7xl px-4 py-8;
+  }
+
+  .wishlist-heading {
+    @apply mb-6 text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  /*
+   * Unlike the collections grid, the wishlist page has no filter rail eating into the width, so
+   * the full max-w-7xl container is available — four columns fit comfortably at xl instead of
+   * stretching three cards thin across the extra space.
+   */
+  .wishlist-grid {
+    @apply grid grid-cols-2 gap-5 md:grid-cols-3 xl:grid-cols-4;
   }
 
   /* ---------- Product details page (/collections/:id) ---------- */
@@ -1099,24 +1224,37 @@
     @apply grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-10;
   }
 
+  /* Hugs the gallery, so the wishlist/share buttons sit on the photo's corner, not in empty space. */
   .pdp-gallery-col {
-    @apply relative;
+    @apply relative sm:w-fit;
   }
 
   .pdp-gallery-actions {
     @apply absolute right-4 top-4 z-10 flex flex-col gap-2;
   }
 
+  .pdp-wishlist-icon-active {
+    @apply fill-current text-destructive;
+  }
+
+  /*
+   * Fixed gallery height on sm+, sized to exactly 8 rail thumbnails: 8 × 64px + 7 × 8px gap
+   * + 8px rail padding = 576px (h-144). Both columns fill it, so the main image can no longer
+   * grow with the number of photos (the old max-h-full was relative to a row whose height the
+   * rail itself set, so it never actually capped anything).
+   */
   .gallery-wrap {
-    @apply flex flex-col-reverse gap-3 sm:flex-row;
+    @apply flex flex-col-reverse gap-3 sm:h-144 sm:flex-row;
   }
 
+  /* Up to 8 thumbnails fit; a 9th scrolls. p-1 keeps the active ring from being clipped. */
   .gallery-thumbs {
-    @apply flex shrink-0 flex-row gap-3 overflow-x-auto sm:max-h-[560px] sm:flex-col sm:overflow-y-auto;
+    @apply flex shrink-0 flex-row gap-2 overflow-x-auto p-1 sm:h-full sm:flex-col sm:overflow-y-auto;
   }
 
+  /* 48×64 — 3:4 like the photos. 8 × 64 + 7 × 8 gap + 8 padding = 576px, the gallery height. */
   .gallery-thumb {
-    @apply size-16 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-border bg-muted transition hover:border-primary/60 sm:size-20;
+    @apply aspect-3/4 w-12 shrink-0 cursor-pointer overflow-hidden rounded-lg border border-border bg-muted transition hover:border-primary/60;
   }
 
   .gallery-thumb-active {
@@ -1127,18 +1265,28 @@
     @apply size-full object-cover;
   }
 
+  /* Phones keep the 4:5 portrait box; from sm the stage fills the fixed gallery height. */
+  /*
+   * Always 3:4, the shape of the photos, so a photo fills it edge to edge. Phones: full width.
+   * sm+: height fixed by the gallery (576px), width follows from the ratio (432px).
+   */
   .gallery-stage {
-    @apply flex aspect-4/5 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted sm:aspect-square lg:aspect-4/5;
+    @apply flex aspect-3/4 w-full items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-muted sm:h-full sm:w-auto sm:shrink-0;
   }
 
-  /* Keyed on the image URL in the component, so swapping colour re-runs this fade. */
+  /*
+   * The stage matches the photos' 3:4 shape, so cover fills it with no bars and effectively no
+   * crop. object-top means an off-ratio photo loses its bottom edge, never the top.
+   * Keyed on the image URL in the component, so swapping photos re-runs the fade.
+   */
   .gallery-stage-image {
-    @apply size-full object-cover;
+    @apply size-full object-cover object-top;
     animation: gallery-fade 250ms ease-out;
   }
 
+  /* Rendered without .gallery-wrap (no photos), so it needs the fixed height itself. */
   .gallery-empty {
-    @apply text-muted-foreground;
+    @apply text-muted-foreground sm:h-144;
   }
 
   .pdp-info {
@@ -1189,16 +1337,45 @@
     @apply normal-case tracking-normal text-foreground;
   }
 
-  .pdp-swatches {
-    @apply flex flex-wrap gap-3;
+  /*
+   * Colour tiles: 5 per row. Tiles have a fixed height (h-20 = 80px) so the cap is exact —
+   * 2 rows + 1 gap = 80 + 80 + 12 = 172px (max-h-43). Up to 10 colours fit with no scrollbar;
+   * an 11th makes it scroll.
+   */
+  .pdp-more-colors {
+    @apply grid w-full grid-cols-5 gap-2 max-h-43 overflow-y-auto pr-1 sm:w-fit sm:grid-cols-[repeat(5,3.75rem)] sm:gap-3;
   }
 
-  .pdp-swatch {
-    @apply size-9 cursor-pointer rounded-full border border-border transition hover:scale-110;
+  /* 60×80 — 3:4 like the photos. Two rows + one gap = 172px (max-h-43). */
+  .pdp-more-colors-tile {
+    @apply relative aspect-3/4 w-full cursor-pointer overflow-hidden rounded-md border border-border bg-muted transition hover:border-primary/60 sm:h-20 sm:w-15;
   }
 
-  .pdp-swatch-active {
-    @apply ring-2 ring-primary ring-offset-2 ring-offset-card;
+  /* Which colour this tile stands for — the only way to tell untagged tiles apart, since they
+     all show the cover photo. */
+  .pdp-more-colors-dot {
+    @apply absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border border-foreground shadow-xs;
+  }
+
+  /* Every colour the product comes in; the one currently showing is ringed. */
+  .pdp-colour-row {
+    @apply flex flex-wrap items-center gap-2.5;
+  }
+
+  .pdp-colour-dot {
+    @apply h-7 w-7 cursor-pointer rounded-full border border-foreground shadow-xs transition hover:scale-110;
+  }
+
+  .pdp-colour-dot-active {
+    @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+
+  .pdp-more-colors-tile-active {
+    @apply border-primary ring-2 ring-primary/30;
+  }
+
+  .pdp-more-colors-image {
+    @apply size-full object-cover object-top;
   }
 
   .pdp-sizes {
@@ -1291,7 +1468,7 @@
   }
 
   .pdp-related-item {
-    @apply w-56 shrink-0 sm:w-64;
+    @apply w-40 shrink-0 sm:w-56 lg:w-64;
   }
 
   .pdp-missing {
@@ -1302,12 +1479,31 @@
     @apply max-w-sm text-sm text-muted-foreground;
   }
 
+  /* Same box as the loaded gallery, so the page doesn't jump when the product arrives. */
   .pdp-skeleton-gallery {
-    @apply aspect-4/5 w-full rounded-2xl;
+    @apply aspect-3/4 w-full rounded-2xl sm:aspect-auto sm:h-144 sm:w-125;
   }
 
   .pdp-skeleton-block {
     @apply h-40 w-full rounded-2xl;
+  }
+
+  .loading-dots {
+    @apply inline-flex items-center gap-1;
+  }
+
+  /* bg-current inherits the button's text colour, so it works on every button variant. */
+  .loading-dot {
+    @apply inline-block size-1.5 rounded-full bg-current;
+    animation: loading-dot-bounce 1.1s ease-in-out infinite;
+  }
+
+  .loading-dot:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .loading-dot:nth-child(3) {
+    animation-delay: 0.3s;
   }
 
   /* Common loader */
@@ -1322,5 +1518,1463 @@
   .common-loader-label {
     @apply text-sm text-muted-foreground;
   }
-  
+
+  /* ---------- Admin dashboard (/admin) ---------- */
+
+  .dash-page {
+    @apply space-y-6;
+  }
+
+  .dash-header {
+    @apply flex flex-wrap items-end justify-between gap-4;
+  }
+
+  .dash-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .dash-subtitle {
+    @apply mt-1 text-sm text-muted-foreground;
+  }
+
+  /* Date-range presets — the one filter, above everything it scopes. */
+  .dash-range {
+    @apply inline-flex gap-1 rounded-lg border border-border/60 bg-card p-1;
+  }
+
+  .dash-range-option {
+    @apply h-8 cursor-pointer rounded-md px-3 text-xs font-medium text-muted-foreground transition hover:text-foreground;
+  }
+
+  .dash-range-option-active {
+    @apply bg-foreground text-background hover:text-background;
+  }
+
+  /* While a new range loads, the old figures stay put, dimmed — no skeleton flash. */
+  .dash-refreshing {
+    @apply opacity-60 transition-opacity;
+  }
+
+  .dash-kpi-grid {
+    @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .dash-card {
+    @apply rounded-xl border border-border/60 bg-card p-5 shadow-xs;
+  }
+
+  .dash-kpi-head {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .dash-kpi-label {
+    @apply text-sm font-medium text-muted-foreground;
+  }
+
+  .dash-kpi-icon {
+    @apply flex h-9 w-9 items-center justify-center rounded-lg bg-dash-accent/10 text-dash-accent;
+  }
+
+  .dash-kpi-value {
+    @apply mt-3 text-3xl font-semibold tracking-tight text-foreground;
+  }
+
+  .dash-kpi-foot {
+    @apply mt-3 flex items-end justify-between gap-3 text-xs;
+  }
+
+  .dash-delta-up {
+    @apply inline-flex items-center gap-0.5 font-semibold text-emerald-600 dark:text-emerald-400;
+  }
+
+  .dash-delta-down {
+    @apply inline-flex items-center gap-0.5 font-semibold text-rose-600 dark:text-rose-400;
+  }
+
+  .dash-delta-flat {
+    @apply font-medium text-muted-foreground;
+  }
+
+  .dash-kpi-compare {
+    @apply text-muted-foreground;
+  }
+
+  .dash-sparkline {
+    @apply h-8 w-24 shrink-0 overflow-visible;
+  }
+
+  .dash-grid-main {
+    @apply grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)];
+  }
+
+  .dash-grid-secondary {
+    @apply grid gap-4 lg:grid-cols-2;
+  }
+
+  .dash-card-head {
+    @apply mb-4 flex items-start justify-between gap-3;
+  }
+
+  .dash-card-title {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .dash-card-subtitle {
+    @apply mt-0.5 text-xs text-muted-foreground;
+  }
+
+  .dash-card-link {
+    @apply shrink-0 text-xs font-semibold text-primary hover:underline;
+  }
+
+  /* Revenue area chart */
+  .dash-chart {
+    @apply relative;
+  }
+
+  .dash-chart-svg {
+    @apply block w-full overflow-visible rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  .dash-chart-grid {
+    @apply stroke-border;
+  }
+
+  .dash-chart-tick {
+    @apply fill-muted-foreground text-[11px] tabular-nums;
+  }
+
+  .dash-chart-line {
+    @apply fill-none stroke-dash-accent;
+  }
+
+  /* A wash of the series hue, never a saturated block. */
+  .dash-chart-area {
+    @apply fill-dash-accent/10;
+  }
+
+  .dash-chart-crosshair {
+    @apply stroke-muted-foreground/50;
+  }
+
+  /* The surface-coloured ring keeps the dot legible where it sits on the line. */
+  .dash-chart-dot {
+    @apply fill-dash-accent stroke-card;
+  }
+
+  .dash-tooltip {
+    @apply pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-md;
+  }
+
+  .dash-tooltip-value {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .dash-tooltip-meta {
+    @apply text-muted-foreground;
+  }
+
+  .dash-chart-empty {
+    @apply pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-muted-foreground;
+  }
+
+  /* The same numbers as a table, for readers who can't or won't read the chart. */
+  .dash-table-toggle {
+    @apply mt-3 text-xs text-muted-foreground;
+  }
+
+  .dash-table-toggle-summary {
+    @apply cursor-pointer select-none font-medium hover:text-foreground;
+  }
+
+  .dash-data-table {
+    @apply mt-2 w-full text-xs tabular-nums;
+  }
+
+  /* Horizontal bar list: label, bar, value at the tip. One hue — this is magnitude, not identity. */
+  .dash-bar-list {
+    @apply space-y-3;
+  }
+
+  .dash-bar-row {
+    @apply grid grid-cols-[5rem_minmax(0,1fr)_2.25rem] items-center gap-2 text-sm sm:grid-cols-[7.5rem_minmax(0,1fr)_2.5rem] sm:gap-3;
+  }
+
+  .dash-bar-label {
+    @apply truncate text-muted-foreground;
+  }
+
+  .dash-bar-track {
+    @apply h-2.5 overflow-hidden rounded-r-[4px] bg-muted;
+  }
+
+  /* Square at the baseline, 4px rounded at the data end. */
+  .dash-bar-fill {
+    @apply h-full rounded-r-[4px] bg-dash-accent transition-[width] duration-500;
+  }
+
+  .dash-bar-value {
+    @apply text-right font-medium tabular-nums text-foreground;
+  }
+
+  .dash-list {
+    @apply divide-y divide-border/60;
+  }
+
+  .dash-product-row {
+    @apply flex items-center gap-3 py-2.5;
+  }
+
+  .dash-product-thumb {
+    @apply aspect-3/4 w-9 shrink-0 overflow-hidden rounded-md bg-muted;
+  }
+
+  .dash-product-name {
+    @apply truncate text-sm font-medium text-foreground;
+  }
+
+  .dash-product-meta {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .dash-product-bar {
+    @apply mt-1.5 h-1.5 overflow-hidden rounded-r-[4px] bg-muted;
+  }
+
+  .dash-recent-row {
+    @apply flex items-center justify-between gap-3 py-2.5;
+  }
+
+  .dash-stock-low {
+    @apply shrink-0 rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400;
+  }
+
+  .dash-stock-out {
+    @apply shrink-0 rounded-md bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive;
+  }
+
+  .dash-empty {
+    @apply py-8 text-center text-sm text-muted-foreground;
+  }
+
+  /* ---------- Admin orders (/admin/orders) ---------- */
+
+  .admin-orders-page {
+    @apply space-y-5;
+  }
+
+  .admin-orders-toolbar {
+    @apply flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between;
+  }
+
+  .admin-orders-search {
+    @apply relative w-full lg:max-w-sm;
+  }
+
+  .admin-orders-search-icon {
+    @apply pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground;
+  }
+
+  .admin-orders-filters {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .admin-orders-filter {
+    @apply inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium text-muted-foreground transition hover:border-foreground/30 hover:text-foreground;
+  }
+
+  .admin-orders-filter-active {
+    @apply border-foreground bg-foreground text-background hover:text-background;
+  }
+
+  .admin-orders-filter-count {
+    @apply tabular-nums opacity-70;
+  }
+
+  .admin-orders-table-wrap {
+    @apply overflow-x-auto rounded-xl border border-border/60 bg-card;
+  }
+
+  .admin-orders-row {
+    @apply cursor-pointer;
+  }
+
+  .admin-orders-code {
+    @apply font-semibold text-foreground;
+  }
+
+  .admin-orders-sub {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .admin-orders-amount {
+    @apply font-semibold tabular-nums text-foreground;
+  }
+
+  /* Order detail sheet */
+  .order-sheet-body {
+    @apply flex-1 space-y-5 overflow-y-auto px-4 pb-6;
+  }
+
+  .order-sheet-section {
+    @apply space-y-2 border-t border-border/60 pt-4;
+  }
+
+  .order-sheet-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+  }
+
+  .order-sheet-text {
+    @apply text-sm text-foreground;
+  }
+
+  .order-sheet-muted {
+    @apply text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .order-sheet-actions {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .order-sheet-action {
+    @apply h-9 cursor-pointer text-xs font-semibold;
+  }
+
+  .order-sheet-timeline {
+    @apply space-y-1.5 text-xs text-muted-foreground;
+  }
+
+  /* ---------- Home page (/) ---------- */
+
+  .home-page-wrap {
+    @apply min-h-screen bg-background;
+  }
+
+  /* Wider and tighter at the sides than the other pages: the storefront should use the screen. */
+  .home-container {
+    @apply mx-auto w-full max-w-[1600px] space-y-12 px-3 py-8 sm:px-4 lg:space-y-16 lg:px-6 lg:py-10;
+  }
+
+  .home-section-head {
+    @apply mb-6 flex items-end justify-between gap-4;
+  }
+
+  .home-section-eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.3em] text-primary/80;
+  }
+
+  .home-section-title {
+    @apply mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl;
+  }
+
+  .home-view-all {
+    @apply inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary hover:underline;
+  }
+
+  /* Hero carousel: full-bleed, edge to edge on every screen, one banner per slide. The track
+     holds every slide in a row and is shifted by whole widths with translateX. */
+  .home-carousel {
+    @apply relative w-full touch-pan-y overflow-hidden bg-muted select-none;
+  }
+
+  .home-carousel-track {
+    @apply flex transition-transform duration-700 ease-out motion-reduce:transition-none;
+  }
+
+  .home-carousel-slide {
+    @apply block w-full shrink-0;
+  }
+
+  /* Fixed heights per breakpoint keep banners of different upload sizes lined up. */
+  .home-carousel-image {
+    @apply pointer-events-none h-52 w-full object-cover sm:h-72 md:h-96 lg:h-[460px] xl:h-[540px];
+  }
+
+  .home-carousel-arrow {
+    @apply absolute top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-background/80 text-foreground shadow-md backdrop-blur-sm transition hover:scale-105 hover:bg-background sm:flex;
+  }
+
+  .home-carousel-dots {
+    @apply absolute inset-x-0 bottom-4 z-10 flex items-center justify-center gap-2;
+  }
+
+  .home-carousel-dot {
+    @apply h-2 w-2 cursor-pointer rounded-full bg-white/60 shadow transition-all hover:bg-white;
+  }
+
+  .home-carousel-dot-active {
+    @apply w-6 bg-white;
+  }
+
+  .home-hero-fallback-wrap {
+    @apply mx-auto w-full max-w-[1600px] px-3 pt-6 sm:px-4 lg:px-6;
+  }
+
+  /* Shown when there are no banners to display (none uploaded, or the feed failed). */
+  .home-hero-fallback {
+    @apply relative overflow-hidden rounded-3xl border border-border/40 bg-gradient-to-br from-primary/15 via-primary/5 to-background px-6 py-16 text-center sm:px-12 sm:py-24;
+  }
+
+  .home-hero-title {
+    @apply mx-auto max-w-3xl text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl;
+  }
+
+  .home-hero-subtitle {
+    @apply mx-auto mt-4 max-w-xl text-base text-muted-foreground sm:text-lg;
+  }
+
+  .home-hero-actions {
+    @apply mt-8 flex flex-wrap items-center justify-center gap-3;
+  }
+
+  .home-hero-button {
+    @apply h-11 cursor-pointer px-6 text-sm font-semibold;
+  }
+
+  .home-skeleton-hero {
+    @apply h-52 w-full rounded-none sm:h-72 md:h-96 lg:h-[460px] xl:h-[540px];
+  }
+
+  /* Categories */
+  .home-category-grid {
+    @apply grid grid-cols-2 gap-4 md:grid-cols-4;
+  }
+
+  .home-category-tile {
+    @apply flex h-full flex-col justify-between gap-6 rounded-2xl border border-border/50 bg-card p-5 transition duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:p-6;
+  }
+
+  .home-category-icon {
+    @apply flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary;
+  }
+
+  .home-category-name {
+    @apply text-base font-semibold tracking-tight text-foreground sm:text-lg;
+  }
+
+  /* The category's real types from the database, e.g. "Shirt · Jeans · T-Shirt +2 more". */
+  .home-category-types {
+    @apply line-clamp-2 text-xs text-muted-foreground;
+  }
+
+  .home-category-link {
+    @apply inline-flex items-center gap-1 text-xs font-semibold text-primary;
+  }
+
+  /* Coupons */
+  .home-coupon-grid {
+    @apply grid gap-4 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .home-coupon-card {
+    @apply flex h-full flex-col gap-4 rounded-2xl border border-dashed border-primary/30 bg-primary/[0.03] p-5 transition hover:border-primary/50 hover:bg-primary/[0.06];
+  }
+
+  .home-coupon-head {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .home-coupon-icon {
+    @apply flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary;
+  }
+
+  .home-coupon-off {
+    @apply text-2xl font-bold tracking-tight text-foreground;
+  }
+
+  .home-coupon-code-label {
+    @apply text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground;
+  }
+
+  .home-coupon-code {
+    @apply text-xl font-bold tracking-widest text-primary;
+  }
+
+  .home-coupon-meta {
+    @apply space-y-0.5 text-xs text-muted-foreground;
+  }
+
+  .home-coupon-copy {
+    @apply mt-auto h-9 w-full cursor-pointer text-xs font-semibold;
+  }
+
+  /* New arrivals — the cards reuse .product-card*, so they match /collections. */
+  .home-product-grid {
+    @apply grid grid-cols-2 gap-4 sm:gap-5 xl:grid-cols-4;
+  }
+
+  /* ---------- Cart page (/cart) ---------- */
+
+  .cart-page-wrap {
+    @apply min-h-screen bg-muted/30;
+  }
+
+  .cart-container {
+    @apply mx-auto max-w-6xl px-4 py-6 lg:py-8;
+  }
+
+  /* BAG · ADDRESS · PAYMENT progress rail across the top of the bag flow. */
+  .cart-steps {
+    @apply mb-6 flex items-center justify-center gap-3 sm:gap-4;
+  }
+
+  .cart-step {
+    @apply text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-xs;
+  }
+
+  .cart-step-active {
+    @apply border-b-2 border-primary pb-1 font-semibold text-foreground;
+  }
+
+  .cart-step-divider {
+    @apply h-px w-8 border-t border-dashed border-border sm:w-16;
+  }
+
+  .cart-layout {
+    @apply grid items-start gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)];
+  }
+
+  .cart-main {
+    @apply space-y-4;
+  }
+
+  /* Deliver-to banner */
+  .cart-deliver-card {
+    @apply flex flex-col gap-3 rounded-lg border border-border/60 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .cart-deliver-label {
+    @apply text-sm text-foreground;
+  }
+
+  .cart-deliver-name {
+    @apply font-semibold;
+  }
+
+  .cart-deliver-address {
+    @apply mt-1 text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .cart-deliver-change {
+    @apply h-9 shrink-0 cursor-pointer border-primary/60 text-xs font-semibold uppercase tracking-wide text-primary hover:bg-primary/10 hover:text-primary;
+  }
+
+  /* Items header strip */
+  .cart-items-header {
+    @apply flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card px-4 py-3;
+  }
+
+  .cart-items-count {
+    @apply text-sm font-semibold uppercase tracking-wide text-foreground;
+  }
+
+  .cart-clear-button {
+    @apply h-8 cursor-pointer px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:bg-destructive/10 hover:text-destructive;
+  }
+
+  .cart-lines {
+    @apply space-y-3;
+  }
+
+  /* Line item */
+  /* One card per product: a single photo, then a row per colour/size variation. */
+  .cart-group {
+    @apply flex flex-row gap-4 rounded-lg border-border/60 bg-card p-3 shadow-none transition sm:p-4;
+  }
+
+  /* 3:4, the shape every product image on the site uses. */
+  .cart-group-media {
+    @apply aspect-3/4 w-20 shrink-0 overflow-hidden rounded-md bg-muted sm:w-28;
+  }
+
+  .cart-group-body {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
+  .cart-group-lines {
+    @apply divide-y divide-border/60 border-t border-border/60;
+  }
+
+  .cart-variation {
+    @apply flex flex-wrap items-center gap-x-3 gap-y-2 py-2.5;
+  }
+
+  .cart-variation-labels {
+    @apply flex items-center gap-2;
+  }
+
+  .cart-variation-total {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .cart-variation-actions {
+    @apply ml-auto flex items-center gap-1;
+  }
+
+  .cart-variation-action {
+    @apply cursor-pointer text-muted-foreground hover:text-primary;
+  }
+
+  .cart-variation-remove {
+    @apply cursor-pointer text-muted-foreground hover:bg-destructive/10 hover:text-destructive;
+  }
+
+  .cart-colour-none {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .cart-group-each {
+    @apply text-xs text-muted-foreground;
+  }
+
+  /* 3:4, the shape every product image on the site uses. */
+  .cart-line-media {
+    @apply aspect-3/4 w-20 shrink-0 overflow-hidden rounded-md bg-muted sm:w-28;
+  }
+
+  .cart-line-image {
+    @apply h-full w-full object-cover object-top;
+  }
+
+  .cart-line-image-fallback {
+    @apply flex h-full w-full items-center justify-center text-muted-foreground;
+  }
+
+  .cart-line-body {
+    @apply flex min-w-0 flex-1 flex-col gap-1.5 pr-6;
+  }
+
+  .cart-line-brand {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .cart-line-title {
+    @apply line-clamp-2 text-sm text-muted-foreground transition-colors hover:text-foreground;
+  }
+
+  .cart-line-meta-row {
+    @apply flex flex-wrap items-center gap-2 pt-0.5;
+  }
+
+  /* Static "Size: M" chip — the variant can't be changed in place, only removed and re-added. */
+  .cart-line-pill {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground;
+  }
+
+  /* A bare colour circle, used by the cart and the orders list. The dark outline is what keeps a
+     white or cream swatch visible against the white card. `foreground` rather than a literal
+     black, so it flips to light in dark mode instead of disappearing into the card. */
+  .cart-line-swatch {
+    @apply inline-block h-5 w-5 shrink-0 rounded-full border-[1.5px] border-foreground;
+  }
+
+  /* Height is left to the Select primitive's own data-size rule, which would win over an @apply'd
+     one anyway. */
+  .cart-qty-trigger {
+    @apply cursor-pointer gap-1.5 rounded-md border-border bg-muted/40 px-2.5 text-xs font-medium text-foreground;
+  }
+
+  .cart-line-price-row {
+    @apply flex flex-wrap items-baseline gap-2 pt-1;
+  }
+
+  .cart-line-price {
+    @apply text-sm font-bold text-foreground;
+  }
+
+  .cart-line-original-price {
+    @apply text-xs text-muted-foreground line-through;
+  }
+
+  .cart-line-discount {
+    @apply text-xs font-semibold text-orange-500;
+  }
+
+  .cart-line-remove {
+    @apply absolute right-2 top-2 cursor-pointer text-muted-foreground hover:bg-destructive/10 hover:text-destructive;
+  }
+
+  /* Shared pagination strip (cart lines, admin orders) — a bordered card row. */
+  .list-pagination {
+    @apply flex flex-col items-center justify-between gap-3 rounded-lg border border-border/60 bg-card px-4 py-3 sm:flex-row;
+  }
+
+  .list-pagination-info {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .list-pagination-controls {
+    @apply flex flex-wrap items-center justify-center gap-1;
+  }
+
+  .list-pagination-button {
+    @apply h-8 cursor-pointer gap-1 px-2.5 text-xs font-medium disabled:cursor-not-allowed;
+  }
+
+  .list-pagination-page {
+    @apply h-8 w-8 cursor-pointer text-xs font-medium;
+  }
+
+  .cart-wishlist-link {
+    @apply flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card px-4 py-3.5 text-sm font-medium text-foreground transition hover:border-primary/40;
+  }
+
+  /* Price details panel — shared with /checkout */
+  .cart-aside {
+    @apply lg:sticky lg:top-[88px];
+  }
+
+  .cart-summary-card {
+    @apply rounded-lg border-border/60 bg-card shadow-none;
+  }
+
+  .cart-summary-title {
+    @apply text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground;
+  }
+
+  .cart-summary-row {
+    @apply flex items-center justify-between gap-3 text-sm;
+  }
+
+  .cart-summary-label {
+    @apply text-muted-foreground;
+  }
+
+  .cart-summary-value {
+    @apply font-medium text-foreground;
+  }
+
+  .cart-summary-discount {
+    @apply font-medium text-emerald-600 dark:text-emerald-400;
+  }
+
+  .cart-summary-link {
+    @apply text-sm font-semibold text-primary hover:underline;
+  }
+
+  .cart-summary-total-row {
+    @apply flex items-center justify-between border-t border-border/60 pt-3 text-base font-bold text-foreground;
+  }
+
+  .cart-summary-terms {
+    @apply text-[11px] leading-relaxed text-muted-foreground;
+  }
+
+  .cart-summary-actions {
+    @apply space-y-2 pt-1;
+  }
+
+  .cart-place-order-button {
+    @apply h-12 w-full cursor-pointer text-sm font-semibold uppercase tracking-wide;
+  }
+
+  .cart-continue-button {
+    @apply h-10 w-full cursor-pointer;
+  }
+
+  .cart-skeleton-line {
+    @apply h-36 w-full rounded-lg;
+  }
+
+
+  /* ---------- Orders page (/orders) ---------- */
+
+  .orders-page-wrap {
+    @apply min-h-screen bg-muted/30;
+  }
+
+  .orders-container {
+    @apply mx-auto max-w-4xl px-4 py-6 lg:py-8;
+  }
+
+  .orders-heading {
+    @apply mb-6 font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl;
+  }
+
+  .orders-toolbar {
+    @apply mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between;
+  }
+
+  .orders-older-toggle {
+    @apply mx-auto mt-5 block cursor-pointer text-sm font-semibold text-primary hover:underline;
+  }
+
+  .orders-list {
+    @apply space-y-4;
+  }
+
+  .order-card {
+    @apply rounded-lg border-border/60 bg-card shadow-none transition hover:border-primary/40;
+  }
+
+  .order-card-head {
+    @apply flex flex-wrap items-start justify-between gap-3;
+  }
+
+  .order-card-code {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  .order-card-date {
+    @apply text-xs text-muted-foreground;
+  }
+
+  /* One row per purchased line, divided from the header and each other. */
+  .order-items {
+    @apply divide-y divide-border/60 border-y border-border/60;
+  }
+
+  .order-item {
+    @apply flex gap-3 py-3;
+  }
+
+  /* 3:4, the shape every product image on the site uses. */
+  .order-item-media {
+    @apply aspect-3/4 w-14 shrink-0 overflow-hidden rounded-md bg-muted sm:w-16;
+  }
+
+  .order-item-image {
+    @apply h-full w-full object-cover object-top;
+  }
+
+  .order-item-image-fallback {
+    @apply flex h-full w-full items-center justify-center text-muted-foreground;
+  }
+
+  .order-item-body {
+    @apply flex min-w-0 flex-1 flex-col gap-0.5;
+  }
+
+  .order-item-brand {
+    @apply text-xs font-semibold text-foreground;
+  }
+
+  .order-item-title {
+    @apply line-clamp-2 text-sm text-muted-foreground transition-colors hover:text-foreground;
+  }
+
+  /* Shown in place of the title when the product has since been deleted. */
+  .order-item-unavailable {
+    @apply text-sm italic text-muted-foreground;
+  }
+
+  .order-item-meta {
+    @apply flex flex-wrap items-center gap-2 pt-1;
+  }
+
+  .order-item-qty {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .order-item-price {
+    @apply shrink-0 text-sm font-semibold text-foreground;
+  }
+
+  .order-items-toggle {
+    @apply h-8 cursor-pointer px-0 text-xs font-semibold text-primary hover:bg-transparent hover:text-primary hover:underline;
+  }
+
+  .order-card-footer {
+    @apply grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,14rem)];
+  }
+
+  .order-card-address-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+  }
+
+  .order-card-address {
+    @apply mt-1 text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .order-card-summary {
+    @apply space-y-1.5;
+  }
+
+  .order-summary-row {
+    @apply flex items-center justify-between gap-3 text-xs text-muted-foreground;
+  }
+
+  .order-summary-discount {
+    @apply font-medium text-emerald-600 dark:text-emerald-400;
+  }
+
+  .order-summary-total {
+    @apply flex items-center justify-between gap-3 border-t border-border/60 pt-1.5 text-sm font-bold text-foreground;
+  }
+
+  /* Order tracker: Placed → Shipped → Delivered (→ Returned). Each step is a column; the line to
+     the next step is drawn from this step's dot (::after) and fills once the next step is reached. */
+  .order-progress {
+    @apply flex items-start py-1;
+  }
+
+  .order-progress-step {
+    @apply relative flex flex-1 flex-col items-center gap-1 text-center;
+  }
+
+  .order-progress-connector {
+    @apply after:absolute after:left-[calc(50%+14px)] after:right-[calc(-50%+14px)] after:top-[13px] after:h-0.5 after:rounded-full after:bg-border;
+  }
+
+  .order-progress-connector-filled {
+    @apply after:bg-primary;
+  }
+
+  .order-progress-dot {
+    @apply relative z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-border bg-card text-[11px] font-semibold text-muted-foreground;
+  }
+
+  .order-progress-dot-reached {
+    @apply border-primary bg-primary text-primary-foreground;
+  }
+
+  .order-progress-dot-current {
+    @apply ring-4 ring-primary/15;
+  }
+
+  .order-progress-label {
+    @apply text-[11px] font-medium text-muted-foreground sm:text-xs;
+  }
+
+  .order-progress-label-reached {
+    @apply font-semibold text-foreground;
+  }
+
+  .order-progress-date {
+    @apply min-h-4 text-[10px] text-muted-foreground sm:text-[11px];
+  }
+
+  .order-card-timeline {
+    @apply border-t border-border/60 pt-3 text-xs text-muted-foreground;
+  }
+
+  /* Only on orders abandoned at the gateway: says so, and offers to finish the payment. */
+  .order-pay-strip {
+    @apply flex flex-col gap-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  /* The signed-in devices list in Account. */
+  .session-intro {
+    @apply font-ubuntuMono text-xs tracking-wide text-slate-500;
+  }
+
+  .session-list {
+    @apply flex flex-col gap-2;
+  }
+
+  .session-row {
+    @apply flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-900/40;
+  }
+
+  .session-row-main {
+    @apply flex items-center gap-3;
+  }
+
+  .session-row-icon {
+    @apply size-4 shrink-0 text-slate-500;
+  }
+
+  .session-row-device {
+    @apply flex items-center gap-2 text-sm font-medium text-foreground;
+  }
+
+  .session-row-current {
+    @apply rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-700 dark:text-emerald-400;
+  }
+
+  .session-row-meta {
+    @apply font-ubuntuMono text-xs tracking-wide text-slate-500;
+  }
+
+  /* Removing a banner is destructive and rare, so it reads as danger but stays quiet until hovered. */
+  .banner-delete-button {
+    @apply cursor-pointer gap-1.5 text-xs font-semibold text-red-600 hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300;
+  }
+
+  /* A delivered order's return offer. Slate rather than the pay strip's amber: this is an option,
+     not something waiting on the customer. */
+  .order-return-strip {
+    @apply flex flex-col gap-3 rounded-md border border-slate-300/70 bg-slate-100/70 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-slate-600/50 dark:bg-slate-800/40;
+  }
+
+  .order-return-title {
+    @apply text-sm font-semibold text-slate-800 dark:text-slate-200;
+  }
+
+  .order-return-note {
+    @apply text-xs text-slate-600 dark:text-slate-400;
+  }
+
+  .order-return-button {
+    @apply h-9 shrink-0 cursor-pointer border-slate-400/50 bg-transparent px-4 text-xs font-semibold text-slate-800 hover:bg-slate-200/70 dark:text-slate-200 dark:hover:bg-slate-700/50;
+  }
+
+  .order-pay-title {
+    @apply text-sm font-semibold text-amber-800 dark:text-amber-300;
+  }
+
+  .order-pay-note {
+    @apply text-xs text-amber-700/80 dark:text-amber-300/80;
+  }
+
+  .order-pay-actions {
+    @apply flex shrink-0 flex-wrap gap-2;
+  }
+
+  .order-pay-cancel {
+    @apply h-9 cursor-pointer border-amber-500/40 bg-transparent px-4 text-xs font-semibold text-amber-800 hover:bg-amber-500/15 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-200;
+  }
+
+  .order-pay-button {
+    @apply h-9 shrink-0 cursor-pointer px-4 text-xs font-semibold uppercase tracking-wide;
+  }
+
+  /* ---------- Checkout page (/checkout) ---------- */
+
+  .checkout-page-wrap {
+    @apply min-h-screen bg-gradient-to-b from-primary/5 via-background to-background;
+  }
+
+  .checkout-container {
+    @apply mx-auto max-w-7xl px-4 py-8 lg:py-10;
+  }
+
+  .checkout-heading {
+    @apply mb-6 font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl;
+  }
+
+  .checkout-layout {
+    @apply grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-8;
+  }
+
+  .checkout-main {
+    @apply space-y-4;
+  }
+
+  .checkout-section {
+    @apply rounded-2xl border-border/60 bg-card/80 shadow-xs;
+  }
+
+  .checkout-section-title {
+    @apply flex items-center gap-2 font-heading text-base font-semibold text-foreground;
+  }
+
+  .checkout-section-icon {
+    @apply h-4 w-4 text-primary;
+  }
+
+  .checkout-address-list {
+    @apply space-y-2;
+  }
+
+  .checkout-address-option {
+    @apply flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 p-3 transition hover:border-primary/40;
+  }
+
+  .checkout-address-option-active {
+    @apply border-primary bg-primary/5;
+  }
+
+  .checkout-address-name {
+    @apply flex items-center gap-2 text-sm font-medium text-foreground;
+  }
+
+  .checkout-address-lines {
+    @apply text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .checkout-address-empty {
+    @apply flex flex-col items-start gap-3 rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground;
+  }
+
+  .checkout-view-coupons {
+    @apply shrink-0 cursor-pointer text-xs font-semibold text-primary hover:underline;
+  }
+
+  /* View coupons popup */
+  .coupons-dialog-body {
+    @apply max-h-[60vh] overflow-y-auto pr-1;
+  }
+
+  .coupons-dialog-empty {
+    @apply py-10 text-center text-sm text-muted-foreground;
+  }
+
+  .coupon-row {
+    @apply flex items-center gap-3 rounded-lg border border-dashed border-primary/30 bg-primary/[0.03] p-3;
+  }
+
+  .coupon-row-ineligible {
+    @apply border-border bg-muted/30;
+  }
+
+  .coupon-row-icon {
+    @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary;
+  }
+
+  .coupon-row-code {
+    @apply text-sm font-bold tracking-widest text-foreground;
+  }
+
+  .coupon-row-off {
+    @apply text-xs font-semibold text-primary;
+  }
+
+  .coupon-row-meta {
+    @apply text-[11px] text-muted-foreground;
+  }
+
+  .coupon-row-shortfall {
+    @apply mt-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400;
+  }
+
+  .coupon-row-apply {
+    @apply h-8 shrink-0 cursor-pointer px-3 text-xs font-semibold;
+  }
+
+  .checkout-promo-form {
+    @apply flex gap-2;
+  }
+
+  .checkout-promo-input {
+    @apply flex-1 uppercase;
+  }
+
+  .checkout-promo-applied {
+    @apply flex items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2;
+  }
+
+  .checkout-promo-applied-text {
+    @apply flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400;
+  }
+
+  .checkout-promo-warning {
+    @apply text-xs text-amber-600 dark:text-amber-400;
+  }
+
+  .checkout-review-line {
+    @apply flex items-center justify-between gap-3 py-2 text-sm;
+  }
+
+  .checkout-review-title {
+    @apply min-w-0 flex-1 truncate text-foreground;
+  }
+
+  .checkout-review-qty {
+    @apply shrink-0 text-xs text-muted-foreground;
+  }
+
+  .checkout-review-price {
+    @apply shrink-0 font-medium text-foreground;
+  }
+
+  .checkout-review-edit {
+    @apply text-sm font-medium text-primary hover:underline;
+  }
+
+  .checkout-aside {
+    @apply lg:sticky lg:top-[88px];
+  }
+
+  .checkout-pay-primary {
+    @apply h-11 w-full cursor-pointer;
+  }
+
+  .checkout-pay-points {
+    @apply h-11 w-full cursor-pointer;
+  }
+
+  .checkout-points-balance {
+    @apply text-center text-xs text-muted-foreground;
+  }
+
+  .checkout-points-short {
+    @apply text-center text-xs text-amber-600 dark:text-amber-400;
+  }
+
+  .checkout-pay-note {
+    @apply pt-1 text-center text-[11px] text-muted-foreground;
+  }
+
+  /* ---------- Order success page (/order-success) ---------- */
+
+  .order-success-wrap {
+    @apply flex min-h-[70vh] items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background px-4 py-10;
+  }
+
+  .order-success-card {
+    @apply w-full max-w-md rounded-2xl border-border/60 bg-card/80 text-center shadow-xs;
+  }
+
+  .order-success-icon {
+    @apply mx-auto h-14 w-14 text-emerald-500;
+  }
+
+  .order-success-title {
+    @apply font-heading text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .order-success-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .order-success-meta {
+    @apply space-y-1 rounded-xl border border-border/60 bg-background/60 p-3 text-xs text-muted-foreground;
+  }
+
+  .order-success-actions {
+    @apply flex flex-col gap-2 pt-1 sm:flex-row sm:justify-center;
+  }
+
+  /* ---------- Account page (/account) ---------- */
+
+  .account-page-wrap {
+    @apply min-h-screen bg-gradient-to-b from-primary/5 via-background to-background;
+  }
+
+  .account-container {
+    @apply mx-auto max-w-3xl px-4 py-8 lg:py-10;
+  }
+
+  .account-header {
+    @apply mb-6 space-y-1;
+  }
+
+  .account-heading {
+    @apply font-heading text-2xl font-semibold tracking-tight text-foreground md:text-3xl;
+  }
+
+  .account-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .account-tabs-list {
+    @apply w-full sm:w-auto;
+  }
+
+  .account-tabs-trigger {
+    @apply flex-1 sm:flex-none;
+  }
+
+  .account-section {
+    @apply space-y-4;
+  }
+
+  /* Profile card */
+  .account-card {
+    @apply rounded-2xl border-border/60 bg-card/80 shadow-xs;
+  }
+
+  /* `group/avatar` itself can't go through @apply (Tailwind v4 rejects a named group marker as
+     a utility), so it's added directly in JSX alongside this class. */
+  .account-avatar-wrap {
+    @apply relative shrink-0;
+  }
+
+  .account-avatar {
+    @apply h-22 w-22 ring-4 ring-primary/10;
+  }
+
+  .account-avatar-overlay {
+    @apply absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover/avatar:opacity-100 disabled:cursor-not-allowed;
+  }
+
+  .account-avatar-uploading {
+    @apply absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-[11px] font-medium text-white;
+  }
+
+  .account-name-row {
+    @apply flex items-center justify-center gap-1.5 sm:justify-start;
+  }
+
+  .account-name {
+    @apply font-heading text-lg font-semibold text-foreground;
+  }
+
+  .account-email {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .account-badge-row {
+    @apply flex flex-wrap items-center justify-center gap-2 pt-1 sm:justify-start;
+  }
+
+  .account-points-badge {
+    @apply gap-1 bg-amber-500/10 text-amber-700 dark:text-amber-400;
+  }
+
+  /* Change password card */
+  .account-card-title-row {
+    @apply flex items-center gap-2;
+  }
+
+  .account-card-icon {
+    @apply h-4 w-4 text-primary;
+  }
+
+  /* Addresses tab */
+  .account-addresses-header {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .account-addresses-title-row {
+    @apply flex items-center gap-2;
+  }
+
+  .account-addresses-grid {
+    @apply grid gap-3 sm:grid-cols-2;
+  }
+
+  /* Address card */
+  .address-card {
+    @apply rounded-2xl border-border/60 bg-card/80 shadow-xs transition hover:border-primary/40;
+  }
+
+  .address-card-top {
+    @apply flex items-start justify-between gap-2;
+  }
+
+  .address-card-icon-wrap {
+    @apply mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary;
+  }
+
+  .address-card-name {
+    @apply font-medium text-foreground;
+  }
+
+  .address-card-lines {
+    @apply text-sm leading-relaxed text-muted-foreground;
+  }
+
+  .address-card-actions {
+    @apply flex items-center justify-end gap-1 border-t border-border/60 pt-2;
+  }
+
+  .address-card-action-button {
+    @apply text-muted-foreground hover:text-foreground;
+  }
+
+  .address-card-delete-button {
+    @apply text-muted-foreground hover:bg-destructive/10 hover:text-destructive;
+  }
+
+  /* Admin settings (account) page */
+  .admin-settings-header {
+    @apply space-y-1;
+  }
+
+  .admin-settings-heading {
+    @apply font-heading text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .admin-settings-subtitle {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .admin-settings-details {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .admin-settings-detail {
+    @apply space-y-1 rounded-xl border border-border/60 bg-background/40 px-4 py-3;
+  }
+
+  .admin-settings-detail-label {
+    @apply text-xs uppercase tracking-wide text-muted-foreground;
+  }
+
+  .admin-settings-detail-value {
+    @apply text-sm font-medium text-foreground;
+  }
+
+  /* Header search (beside the Collections link) */
+  .desktop-search-wrap {
+    @apply ml-4 hidden lg:block;
+  }
+
+  .nav-search-form {
+    @apply relative flex w-full items-center lg:w-56 xl:w-72;
+  }
+
+  .mobile-search-wrap {
+    @apply px-4 py-3;
+  }
+
+  .nav-search-input {
+    @apply h-9 rounded-full border-border/70 bg-background/70 pr-10 text-sm;
+  }
+
+  .nav-search-button {
+    @apply absolute right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground;
+  }
+
+  /* Collections: the active search term, clearable */
+  .search-chip {
+    @apply inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-secondary;
+  }
+
+  .search-chip-icon {
+    @apply h-3.5 w-3.5 text-muted-foreground;
+  }
+
+  .facet-group-hint {
+    @apply ml-1.5 text-xs font-normal text-muted-foreground;
+  }
+
+  /* Placeholder for media that hasn't painted yet — a light sweep across a muted block. */
+  .shimmer-block {
+    @apply relative overflow-hidden bg-muted;
+  }
+
+  .shimmer-block::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in oklab, var(--color-foreground) 10%, transparent),
+      transparent
+    );
+    animation: shimmer-sweep 1.4s infinite;
+  }
+
+
+  /* Sold out: per (colour, size), so a gone colour or size is paled rather than removed. */
+  .pdp-colour-dot-sold-out {
+    @apply opacity-35 grayscale;
+  }
+
+  .pdp-more-colors-tile-sold-out {
+    @apply opacity-45 grayscale;
+  }
+
+  .pdp-size-sold-out {
+    @apply cursor-not-allowed text-muted-foreground line-through opacity-50 hover:border-border;
+  }
+
+  .pdp-sold-out-badge {
+    @apply w-fit border-destructive/40 text-destructive;
+  }
+
+  .cart-line-sold-out {
+    @apply rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive;
+  }
+
+  /* Sits over a card's photo when every colour and size is gone. */
+  .product-card-sold-out-veil {
+    @apply absolute inset-0 z-10 flex items-center justify-center bg-background/65 text-sm font-semibold uppercase tracking-wide text-foreground;
+  }
+
+  /* The admin nav in a drawer, for widths where the rail is hidden. */
+  .admin-mobile-sheet {
+    @apply flex w-[280px] max-w-[85vw] flex-col border-r border-sidebar-border bg-sidebar p-0;
+  }
+}
+
+@keyframes shimmer-sweep {
+  100% {
+    transform: translateX(100%);
+  }
 }
