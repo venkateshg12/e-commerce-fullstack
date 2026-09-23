@@ -5,9 +5,14 @@ import CategoryModel from "../models/category.model";
 import ProductModel from "../models/product.model";
 import SubCategoryModel from "../models/subCategory.model";
 import { appAssert } from "../utils/errors";
-import { BrandSchema, SubCategorySchema, UpdateSubCategorySchema } from "@repo/types";
+import { cache } from "../utils/cache";
+import { invalidateProductDetailsWhere } from "./product.service";
+import { BrandSchema, CategorySchema, SubCategorySchema, UpdateSubCategorySchema } from "@repo/types";
 
 const CASE_INSENSITIVE = { locale: "en", strength: 2 };
+
+// Changes only through the admin writes below, each of which bumps the version.
+const CATALOG_TTL_SECONDS = 60 * 60;
 
 const isDuplicateKeyError = (error: unknown) =>
     typeof error === "object" && error !== null && (error as { code?: number }).code === 11000;
@@ -32,14 +37,20 @@ const assertUnused = async (field: "brand" | "category" | "subCategory", id: str
     );
 };
 
-export const getBrandsService = () =>
-    BrandModel.find({}).collation(CASE_INSENSITIVE).sort({ name: 1 });
+export const getBrandsService = async () =>
+    cache.getOrSet(
+        await cache.versionedKey(["catalog"], "brands"),
+        () => BrandModel.find({}).collation(CASE_INSENSITIVE).sort({ name: 1 }).lean(),
+        CATALOG_TTL_SECONDS
+    );
 
 export const createBrandService = async ({ name }: BrandSchema) => {
     const existing = await BrandModel.findOne({ name }).collation(CASE_INSENSITIVE);
     appAssert(!existing, CONFLICT, "Brand name already exists");
 
-    return withDuplicateGuard("Brand name already exists", () => BrandModel.create({ name }));
+    const created = await withDuplicateGuard("Brand name already exists", () => BrandModel.create({ name }));
+    await cache.bump("catalog");
+    return created;
 };
 
 export const updateBrandService = async (brandId: string, { name }: BrandSchema) => {
@@ -52,7 +63,12 @@ export const updateBrandService = async (brandId: string, { name }: BrandSchema)
     appAssert(!duplicate, CONFLICT, "Brand name already exists");
 
     brand.name = name;
-    return withDuplicateGuard("Brand name already exists", () => brand.save());
+    const saved = await withDuplicateGuard("Brand name already exists", () => brand.save());
+    // Products embed their brand's name, so the cached page of every product of THIS brand is
+    // stale — the rest of the catalogue's pages are untouched.
+    await invalidateProductDetailsWhere({ brand: brandId });
+    await cache.bump("catalog", "products");
+    return saved;
 };
 
 export const deleteBrandService = async (brandId: string) => {
@@ -63,11 +79,19 @@ export const deleteBrandService = async (brandId: string) => {
 
     await assertUnused("brand", brandId);
     await brand.deleteOne();
+    await cache.bump("catalog");
     return { _id: brandId };
 };
 
 // Every category with its sub-categories embedded, both sorted by name.
-export const getCategoriesWithSubCategoriesService = () =>
+export const getCategoriesWithSubCategoriesService = async () =>
+    cache.getOrSet(
+        await cache.versionedKey(["catalog"], "tree"),
+        loadCategoryTree,
+        CATALOG_TTL_SECONDS
+    );
+
+const loadCategoryTree = () =>
     CategoryModel.aggregate([
         { $sort: { name: 1 } },
         {
@@ -84,6 +108,36 @@ export const getCategoriesWithSubCategoriesService = () =>
         },
     ]).collation(CASE_INSENSITIVE);
 
+export const createCategoryService = async ({ name }: CategorySchema) => {
+    const existing = await CategoryModel.findOne({ name }).collation(CASE_INSENSITIVE);
+    appAssert(!existing, CONFLICT, "Category name already exists");
+
+    const created = await withDuplicateGuard("Category name already exists", () =>
+        CategoryModel.create({ name })
+    );
+    await cache.bump("catalog");
+    return created;
+};
+
+export const updateCategoryService = async (categoryId: string, { name }: CategorySchema) => {
+    appAssert(mongoose.isValidObjectId(categoryId), BAD_REQUEST, "Invalid category ID");
+
+    const category = await CategoryModel.findById(categoryId);
+    appAssert(category, NOT_FOUND, "Category not found");
+
+    const duplicate = await CategoryModel.findOne({ name, _id: { $ne: categoryId } }).collation(CASE_INSENSITIVE);
+    appAssert(!duplicate, CONFLICT, "Category name already exists");
+
+    category.name = name;
+    const saved = await withDuplicateGuard("Category name already exists", () => category.save());
+
+    // Products embed their category's name, so the cached page of every product in this category is
+    // stale — but only those, not the whole catalogue.
+    await invalidateProductDetailsWhere({ category: categoryId });
+    await cache.bump("catalog", "products");
+    return saved;
+};
+
 export const deleteCategoryService = async (categoryId: string) => {
     appAssert(mongoose.isValidObjectId(categoryId), BAD_REQUEST, "Invalid category ID");
 
@@ -94,6 +148,7 @@ export const deleteCategoryService = async (categoryId: string) => {
     // No product can reference these: it would have had to belong to this category.
     await SubCategoryModel.deleteMany({ category: categoryId });
     await category.deleteOne();
+    await cache.bump("catalog");
     return { _id: categoryId };
 };
 
@@ -106,9 +161,11 @@ export const createSubCategoryService = async ({ name, category }: SubCategorySc
     const existing = await SubCategoryModel.findOne({ category, name }).collation(CASE_INSENSITIVE);
     appAssert(!existing, CONFLICT, "This category already has a type with that name");
 
-    return withDuplicateGuard("This category already has a type with that name", () =>
+    const created = await withDuplicateGuard("This category already has a type with that name", () =>
         SubCategoryModel.create({ name, category })
     );
+    await cache.bump("catalog");
+    return created;
 };
 
 export const updateSubCategoryService = async (subCategoryId: string, { name }: UpdateSubCategorySchema) => {
@@ -125,7 +182,11 @@ export const updateSubCategoryService = async (subCategoryId: string, { name }: 
     appAssert(!duplicate, CONFLICT, "This category already has a type with that name");
 
     subCategory.name = name;
-    return withDuplicateGuard("This category already has a type with that name", () => subCategory.save());
+    const saved = await withDuplicateGuard("This category already has a type with that name", () => subCategory.save());
+    // Same again, for the products of this type only.
+    await invalidateProductDetailsWhere({ subCategory: subCategoryId });
+    await cache.bump("catalog", "products");
+    return saved;
 };
 
 export const deleteSubCategoryService = async (subCategoryId: string) => {
@@ -136,5 +197,6 @@ export const deleteSubCategoryService = async (subCategoryId: string) => {
 
     await assertUnused("subCategory", subCategoryId);
     await subCategory.deleteOne();
+    await cache.bump("catalog");
     return { _id: subCategoryId };
 };
