@@ -135,6 +135,23 @@ const orderSchema = new mongoose.Schema<OrderDocument>(
             type: Date,
             default: null,
         },
+
+        shippedAt: {
+            type: Date,
+            default: null,
+        },
+
+        cancelledAt: {
+            type: Date,
+            default: null,
+        },
+
+        // Who cancelled it: the customer (from /orders) or an admin (from the admin panel).
+        cancelledBy: {
+            type: String,
+            enum: ["customer", "admin", null],
+            default: null,
+        },
     },
     {
         timestamps: true,
@@ -144,5 +161,17 @@ const orderSchema = new mongoose.Schema<OrderDocument>(
 orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ orderStatus: 1, createdAt: -1 });
 orderSchema.index({ paymentStatus: 1, createdAt: -1 });
+
+// Cancelled orders are deleted 12 hours after cancellation — Mongo's TTL monitor does it (it sweeps
+// about once a minute). The partial filter is what keeps this safe: only `cancelled` orders ever
+// match, and one that gets paid anyway (confirm's revive path) has cancelledAt cleared and becomes
+// `placed`, so it drops out. Only unpaid orders can be cancelled, so no payment record is lost.
+orderSchema.index(
+    { cancelledAt: 1 },
+    {
+        expireAfterSeconds: 12 * 60 * 60,
+        partialFilterExpression: { orderStatus: "cancelled" },
+    }
+);
 
 export const OrderModel = mongoose.model<OrderDocument>("Order", orderSchema); 

@@ -1,13 +1,10 @@
+import { z } from "zod";
 import { BAD_REQUEST, CREATED, NOT_FOUND, OK, UNAUTHORIZED } from "../constants/https";
-import { createAccount, loginUser, refreshUserAccessToken, resendVerificationEmail, resetPassword, sentResetPasswordEmail } from "../services/auth.service";
+import { changePasswordService, createAccount, loginUser, refreshUserAccessToken, resendVerificationEmail, resetPassword, sentResetPasswordEmail, updateAvatarService, updateProfileService, revokeSessions, verifyEmail } from "../services/auth.service";
 import { catchError, appAssert } from "../utils/errors";
-import { emailSchema, loginInSchema, registerSchema, resetPasswordSchema } from "@repo/types";
-import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies, refreshTokenSignOptions, signToken, verifyToken } from "../utils/auth";
-import SessionModel from "../models/session.model";
-import VerificationLinkModel from "../models/verificationLink.model";
+import { changePasswordSchema, emailSchema, loginInSchema, registerSchema, resetPasswordSchema, updateProfileSchema } from "@repo/types";
+import { clearAuthCookies, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, setAuthCookies, verifyAccessTokenIgnoringExpiry } from "../utils/auth";
 import UserModel from "../models/user.model";
-import { VerificationLinkType } from "../constants/verificationLinkType";
-import sessionModel from "../models/session.model";
 import { ok } from "../utils/api";
 
 export const registerHandler = catchError(
@@ -48,10 +45,15 @@ export const loginHandler = catchError(
 
 export const logoutHandler = catchError(
     async (req, res) => {
-        const accessToken = req.cookies.accessToken;
-        const { payload } = verifyToken(accessToken)
+        /*
+          Expiry is ignored on purpose: after 15 idle minutes the access token has lapsed, and
+          skipping the delete then left the 30-day session — and any copy of its refresh token —
+          alive after the user had logged out. The signature is still verified.
+         */
+        const accessToken = req.cookies.accessToken as string | undefined;
+        const { payload } = accessToken ? verifyAccessTokenIgnoringExpiry(accessToken) : {};
         if (payload) {
-            await SessionModel.findByIdAndDelete(payload.sessionId);
+            await revokeSessions({ _id: payload.sessionId });
         }
 
         clearAuthCookies(res).status(OK).json(ok({ message: "Logout Successful!" }));
@@ -65,64 +67,26 @@ export const refreshHandler = catchError(
 
         const { accessToken, newRefreshToken } = await refreshUserAccessToken(refreshToken);
 
-        if (newRefreshToken) {
-            res.cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions());
-        }
-        return res.status(OK).cookie("accessToken", accessToken, getAccessTokenCookieOptions()).json(ok({
-            message: "Access token refreshed"
-        }))
+        // Refresh tokens are single-use, so a new one is issued on every refresh.
+        return res
+            .status(OK)
+            .cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions())
+            .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+            .json(ok({
+                message: "Access token refreshed"
+            }))
     }
 )
 
 export const verifyEmailHandler = catchError(
     async (req, res) => {
-        const { token } = req.params;
+        // Express 5 types a wildcard param as string | string[]; a link only ever carries one.
+        const token = z.string().min(1).parse(req.params.token);
 
-        // find the token;
-        const verificationLink = await VerificationLinkModel.findOne(
-            {
-                token: token,
-                type: VerificationLinkType.EmailVerification
-            }
-        );
+        const { user, accessToken, refreshToken } = await verifyEmail(token, req.headers["user-agent"]);
 
-        appAssert(verificationLink, BAD_REQUEST, "Verification link has expired or is invalid.");
-
-        const user = await UserModel.findByIdAndUpdate(
-            verificationLink.userId,
-            { verified: true },
-            { returnDocument: "after" }
-        );
-
-        appAssert(user, NOT_FOUND, "User not found! Please register");
-
-        // create session
-        const session = await sessionModel.create({
-            userId: user._id,
-            userAgent: req.headers["user-agent"] || "",
-        })
-
-        // sign access token & refresh token
-        const refreshToken = signToken(
-            {
-                sessionId: session._id
-            },
-            refreshTokenSignOptions
-        )
-
-        const accessToken = signToken(
-            {
-                userId: user._id,
-                role: user.role,
-                sessionId: session._id
-            }
-        )
-
-        await verificationLink.deleteOne();
-
-        // 3. Set cookies on response and return success JSON
         return setAuthCookies({ res, accessToken, refreshToken }).status(OK).json(ok({
-            user: user.omitPassword(),
+            user,
             message: "Email verified successfully!"
         }));
     }
@@ -170,5 +134,31 @@ export const getProfileData = catchError(
         const user = await UserModel.findById(userId);
         appAssert(user !== null, NOT_FOUND, "User not found!");
         res.status(OK).json(ok({user: user.omitPassword()}));
+    }
+)
+
+export const updateProfileHandler = catchError(
+    async (req, res) => {
+        const data = updateProfileSchema.parse(req.body);
+        const user = await updateProfileService(req.userId, data);
+        return res.status(OK).json(ok({ user }));
+    }
+)
+
+export const updateAvatarHandler = catchError(
+    async (req, res) => {
+        const file = req.file as Express.Multer.File | undefined;
+        appAssert(file, BAD_REQUEST, "Avatar image is required");
+
+        const user = await updateAvatarService(req.userId, file.buffer);
+        return res.status(OK).json(ok({ user }));
+    }
+)
+
+export const changePasswordHandler = catchError(
+    async (req, res) => {
+        const data = changePasswordSchema.parse(req.body);
+        const result = await changePasswordService(req.userId, req.sessionId, data);
+        return res.status(OK).json(ok(result));
     }
 )

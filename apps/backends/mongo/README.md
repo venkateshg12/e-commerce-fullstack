@@ -34,12 +34,6 @@ add this to scripts:
 change "main" : "src/index.ts"
 
 
-
-draw the folder structure
-src/
-    config/
-        db.ts
-    constants/
-        env.ts
-        https.ts
-
+-- background jobs implementation.
+-- rate limiting implementation.
+-- image compression implementation.

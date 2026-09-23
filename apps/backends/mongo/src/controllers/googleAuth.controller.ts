@@ -1,17 +1,20 @@
 import { LoginTicket, OAuth2Client } from "google-auth-library";
+import { z } from "zod";
 import UserModel from "../models/user.model";
-import SessionModel from "../models/session.model";
+import VerificationLinkModel from "../models/verificationLink.model";
 import { catchError, appAssert } from "../utils/errors";
-import { BAD_REQUEST, INTERNAL_SERVER_ERROR, OK, UNAUTHORIZED } from "../constants/https";
+import { INTERNAL_SERVER_ERROR, OK, UNAUTHORIZED } from "../constants/https";
 import { GOOGLE_CLIENT_ID } from "../constants/env";
-import { refreshTokenSignOptions, signToken, setAuthCookies } from "../utils/auth";
+import { setAuthCookies } from "../utils/auth";
+import { createSessionAndTokens, revokeSessions } from "../services/auth.service";
 import { ok } from "../utils/api";
 
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 
+const googleAuthSchema = z.object({ idToken: z.string().min(1) });
+
 export const googleAuthHandler = catchError(async (req, res) => {
-    const { idToken } = req.body;
-    appAssert(idToken, BAD_REQUEST, "Google ID token is required");
+    const { idToken } = googleAuthSchema.parse(req.body);
     appAssert(GOOGLE_CLIENT_ID, INTERNAL_SERVER_ERROR, "Google Client ID is not configured on the server");
 
     let ticket: LoginTicket | undefined;
@@ -28,36 +31,40 @@ export const googleAuthHandler = catchError(async (req, res) => {
     const payload = ticket.getPayload();
     appAssert(payload, UNAUTHORIZED, "Invalid token payload");
 
-    const { email, email_verified, name, sub: googleId, picture: avatar } = payload;
-    appAssert(email && email_verified, UNAUTHORIZED, "Unverified Google account or email missing");
+    const { email: rawEmail, email_verified, name, sub: googleId, picture: avatar } = payload;
+    appAssert(rawEmail && email_verified, UNAUTHORIZED, "Unverified Google account or email missing");
+    const email = rawEmail.trim().toLowerCase();
 
     // Find existing user by email
     let user = await UserModel.findOne({ email });
 
     if (user) {
-        // Handle blocked users before login
-        if ((user as any).isBlocked) {
-            appAssert(false, UNAUTHORIZED, "Your account has been suspended.");
+        /*
+          An unverified local account was never proven to belong to this email's owner — anyone
+          can register someone else's address. Google has now proven ownership, so the account is
+          taken over by its rightful owner: the unproven password is dropped, and any sessions or
+          pending links created under it are revoked. Otherwise whoever pre-registered the address
+          would keep a working password on the victim's now-verified account.
+         */
+        if (!user.verified && user.authProvider === "local") {
+            user.password = undefined;
+            user.authProvider = "google";
+            await revokeSessions({ userId: user._id });
+            await VerificationLinkModel.deleteMany({ userId: user._id });
         }
 
         // Link Google profile if missing or update details
-        let updated = false;
         if (!user.googleId) {
             user.googleId = googleId;
-            updated = true;
         }
 
         if (avatar && user.avatar !== avatar) {
             user.avatar = avatar;
-            updated = true;
         }
 
-        if (!user.verified) {
-            user.verified = true;
-            updated = true;
-        }
+        user.verified = true;
 
-        if (updated) {
+        if (user.isModified()) {
             await user.save();
         }
     } else {
@@ -72,28 +79,7 @@ export const googleAuthHandler = catchError(async (req, res) => {
         });
     }
 
-    // Create session document exactly like local login
-    const userAgent = req.headers["user-agent"];
-    const session = await SessionModel.create({
-        userId: user._id,
-        userAgent,
-    });
-
-    // Sign Access and Refresh tokens
-    const refreshToken = signToken(
-        {
-            sessionId: session._id
-        },
-        refreshTokenSignOptions
-    );
-
-    const accessToken = signToken(
-        {
-            userId: user._id,
-            role: user.role,
-            sessionId: session._id
-        }
-    );
+    const { accessToken, refreshToken } = await createSessionAndTokens(user, req.headers["user-agent"]);
 
     // Set HttpOnly Cookies and Return SuccessResponse
     setAuthCookies({ res, accessToken, refreshToken })
