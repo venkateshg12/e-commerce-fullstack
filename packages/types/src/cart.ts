@@ -40,8 +40,10 @@ export const syncCartItemSchema = z.object({
     image: z.string().trim().optional(),
 });
 
+// Bounded: a guest cart is merged one line at a time, so an uncapped array is an easy way to make
+// one request do unbounded work.
 export const syncCartSchema = z.object({
-    items: z.array(syncCartItemSchema).default([]),
+    items: z.array(syncCartItemSchema).max(100).default([]),
 });
 
 export type SyncCartSchema = z.infer<typeof syncCartSchema>;
