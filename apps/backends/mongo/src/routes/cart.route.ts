@@ -12,7 +12,7 @@ import {
 
 export const cartRouter = Router();
 
-cartRouter.use(authenticate, protectedApiLimiter);
+cartRouter.use("/cart", authenticate, protectedApiLimiter);
 
 cartRouter.get("/cart", getCartItems);
 cartRouter.post("/cart", createCartItem);
