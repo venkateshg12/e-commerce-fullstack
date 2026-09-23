@@ -28,8 +28,12 @@ const Collections = () => {
     subCategories,
     activeCategoryName,
     products,
+    totalProducts,
     isInitialLoading,
     isFetching,
+    hasMore,
+    isLoadingMore,
+    loadMore,
     filters,
     sort,
     hasActiveFilters,
@@ -57,11 +61,31 @@ const Collections = () => {
 
     if (products.length) {
       return (
-        <div className={cn("product-grid", isFetching && "product-grid-busy")}>
-          {products.map((item) => (
-            <CustomerProductCard key={item._id} product={item} />
-          ))}
-        </div>
+        <>
+          {/* Fetching the NEXT page leaves the cards it already has live; only a filter change
+              (which replaces them wholesale) dims the grid. */}
+          <div className={cn("product-grid", isFetching && !isLoadingMore && "product-grid-busy")}>
+            {products.map((item) => (
+              <CustomerProductCard key={item._id} product={item} />
+            ))}
+          </div>
+
+          {hasMore ? (
+            <div className="load-more-row">
+              <p className="load-more-count">
+                Showing {products.length} of {totalProducts}
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => loadMore()}
+                disabled={isLoadingMore}
+                className="cursor-pointer action-button"
+              >
+                {isLoadingMore ? "Loading..." : "Load more"}
+              </Button>
+            </div>
+          ) : null}
+        </>
       );
     }
 
