@@ -121,8 +121,7 @@ export function createRateLimiter(options: RateLimiterOptions): RequestHandler {
         const resolvedKey = await keyResolver(req);
         const fullKey = `${prefix}:${resolvedKey}`;
 
-        const maxLimit =
-            typeof options.max === "function" ? await options.max(req) : options.max;
+        const maxLimit = typeof options.max === "function" ? await options.max(req) : options.max;
 
         const isPunitive = typeof blockDurationMs === "number" && blockDurationMs > 0;
 
