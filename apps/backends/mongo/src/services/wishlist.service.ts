@@ -12,10 +12,11 @@ export const getWishlistService = async (
 ) => {
     const wishlist = await WishlistModel.findOne({
         user: userId,
-    }).populate(
-        "products",
-        "title brand price salePercentage images"
-    );
+    }).populate({
+        path: "products",
+        select: "title brand price salesPercentage colors sizes images variants",
+        populate: { path: "brand", select: "name" },
+    });
 
     const products = (wishlist?.products || []) as unknown as Array<
         ProductPreview | null

@@ -2,4 +2,10 @@ export * from './queues/email.queue';
 export * from './producers/email.producer';
 export * from './processors/email.processor';
 export * from './workers/email.worker';
+
+export * from './queues/image.queue';
+export * from './producers/image.producer';
+export * from './processors/image.processor';
+export * from './workers/image.worker';
+
 export * from './dashboard/bull-board';

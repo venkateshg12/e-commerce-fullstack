@@ -23,9 +23,11 @@ const verificationLinkSchema = new mongoose.Schema<VerificationLinkDocument>({
         required: true,
         default: Date.now
     },
+    // Expired links are useless, so Mongo's TTL monitor removes them.
     expiresAt: {
         type: Date,
         required: true,
+        index: { expireAfterSeconds: 0 }
     }
 })
 

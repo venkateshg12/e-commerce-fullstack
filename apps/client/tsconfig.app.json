@@ -24,6 +24,9 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
+    // TS 6 flags `baseUrl` as deprecated, and the deprecation is an ERROR — without this, every
+    // `tsc -b` aborts on the config before checking a single file, so nothing is typechecked.
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": [

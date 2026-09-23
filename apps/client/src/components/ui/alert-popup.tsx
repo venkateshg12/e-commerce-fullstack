@@ -2,8 +2,9 @@ import React from "react";
 import { Modal } from "./modal";
 import { Button } from "./button";
 import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
+import { LoadingDots } from "./loading-dots";
 import { cn } from "@/lib/utils";
-import type { AlertPopupProps } from "@/lib/types";
+import type { AlertPopupProps } from "@/types";
 
 
 
@@ -16,6 +17,7 @@ export const AlertPopup: React.FC<AlertPopupProps> = ({
   actionLabel = "Close",
   onAction,
   autoCloseDuration,
+  isActionPending = false,
 }) => {
 
    // Add auto-close timer hook:
@@ -55,12 +57,16 @@ export const AlertPopup: React.FC<AlertPopupProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="relative overflow-hidden rounded-xl border border-gray-500 bg-white text-black p-6 shadow-2xl backdrop-blur-xl">
+      <div className="relative overflow-hidden rounded-xl border border-gray-500 bg-white text-black p-6 shadow-2xl backdrop-blur-xl pointer-events-auto">
         <div className="absolute -top-12 -left-12 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
 
         <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-gray-900 hover:scale-[1.1]  transition-colors cursor-pointer"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute right-4 top-4 rounded-lg p-1 text-gray-900 hover:scale-[1.1] transition-colors cursor-pointer z-50 pointer-events-auto"
         >
           <X className="h-4 w-4" />
         </button>
@@ -79,13 +85,23 @@ export const AlertPopup: React.FC<AlertPopupProps> = ({
           </p>
 
           <Button
-            onClick={onAction || onClose}
+            type="button"
+            disabled={isActionPending}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isActionPending) return;
+              if (onAction) {
+                onAction();
+              } else {
+                onClose();
+              }
+            }}
             className={cn(
-              "w-full py-2.5 font-lato font-bold tracking-widest text-xs md:text-sm border border-black/35 rounded-lg cursor-pointer active:scale-95 transition-all shadow-lg",
+              "w-full py-2.5 font-lato font-bold tracking-widest text-xs md:text-sm border border-black/35 rounded-lg cursor-pointer active:scale-95 transition-all shadow-lg z-50 pointer-events-auto",
               current.buttonClass
             )}
           >
-            {actionLabel.toUpperCase()}
+            {isActionPending ? <LoadingDots /> : actionLabel.toUpperCase()}
           </Button>
         </div>
       </div>

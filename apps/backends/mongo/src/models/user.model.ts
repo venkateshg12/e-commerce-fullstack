@@ -1,37 +1,46 @@
 import mongoose from "mongoose";
 import { AddressDocument, UserDocument } from "../types/user.types";
-import { compareValue, hashValue } from "../utils/bcrypt";
+import { compareValue, hashValue } from "../utils/auth";
 
-const addressSchema = new mongoose.Schema<AddressDocument>({
+export const addressSchema = new mongoose.Schema<AddressDocument>({
     fullName: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
     },
     address: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
     },
     state: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+    },
+    city: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    country: {
+        type: String,
+        default: "India",
+        trim: true,
     },
     postalCode: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
     },
     isDefault: {
         type: Boolean,
-        default: false
+        default: false,
     },
-},
-    {
-        timestamps: false,
-    }
-);
+}, {
+    timestamps: false,
+});
+
 
 
 const userSchema = new mongoose.Schema<UserDocument>({
@@ -39,10 +48,14 @@ const userSchema = new mongoose.Schema<UserDocument>({
         type: String,
         required: false,
     },
+    // Normalised on write so "Foo@x.com" and "foo@x.com" can't become two accounts; the shared Zod
+    // schema normalises lookups the same way.
     email: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        lowercase: true,
+        trim: true
     },
     password: {
         type: String,

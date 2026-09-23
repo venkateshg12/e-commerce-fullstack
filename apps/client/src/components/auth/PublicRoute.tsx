@@ -12,7 +12,7 @@ const PublicRoute = () => {
 
   if (user) {
     // Redirect to the saved location, or default based on role
-    const defaultHome = user.role === "admin" ? "/admin" : "/home";
+    const defaultHome = user.role === "admin" ? "/admin" : "/";
     const from = (location.state as any)?.from?.pathname || defaultHome;
     return <Navigate to={from} replace />;
   }

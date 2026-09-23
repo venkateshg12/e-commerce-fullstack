@@ -1,5 +1,5 @@
 import API from "@/lib/api";
-import type { LoginResponse, RegisterResponse, SuccessResponse, VerifiedResponse } from "@/lib/types";
+import type { ChangePasswordPayload, ChangePasswordResponse, LoginResponse, ProfileResponse, RegisterResponse, SuccessResponse, UpdateAvatarResponse, UpdateProfilePayload, UpdateProfileResponse, VerifiedResponse } from "@/types";
 import type { LoginInSchema, RegisterSchema, ResetPasswordSchema } from "@repo/types";
 
 
@@ -42,5 +42,28 @@ export const resetPassword = async (data: ResetPasswordSchema & { token: string 
 
 export const googleLogin = async (idToken: string): Promise<SuccessResponse<LoginResponse>> => {
     const response = await API.post<SuccessResponse<LoginResponse>>("/auth/google", { idToken });
+    return response.data;
+}
+
+export const getProfileData = async():Promise<SuccessResponse<ProfileResponse>> => {
+    const response = await API.get<SuccessResponse<ProfileResponse>>("auth/me");
+    return response.data;
+}
+
+export const updateProfile = async (data: UpdateProfilePayload): Promise<SuccessResponse<UpdateProfileResponse>> => {
+    const response = await API.patch<SuccessResponse<UpdateProfileResponse>>("/auth/me", data);
+    return response.data;
+}
+
+export const updateAvatar = async (file: File): Promise<SuccessResponse<UpdateAvatarResponse>> => {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const response = await API.post<SuccessResponse<UpdateAvatarResponse>>("/auth/me/avatar", formData);
+    return response.data;
+}
+
+export const changePassword = async (data: ChangePasswordPayload): Promise<SuccessResponse<ChangePasswordResponse>> => {
+    const response = await API.post<SuccessResponse<ChangePasswordResponse>>("/auth/me/password", data);
     return response.data;
 }

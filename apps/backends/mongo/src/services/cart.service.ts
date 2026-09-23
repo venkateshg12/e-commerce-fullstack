@@ -3,6 +3,7 @@ import { CartModel } from "../models/cartItem.model";
 import ProductModel from "../models/product.model";
 import { NOT_FOUND, BAD_REQUEST } from "../constants/https";
 import { appAssert } from "../utils/errors";
+import { findVariant, getVariantStock } from "../utils/variants";
 import { CartPreview, ProductPreview } from "../types/cartItem.types";
 import { ProductDocument, ProductSize } from "../types/product.types";
 import {
@@ -18,16 +19,26 @@ export function formatProduct(product: ProductPreview) {
         product.images[0]?.url ||
         "";
 
-    const finalPrice = product.salePercentage
-        ? Math.round(product.price - (product.price * product.salePercentage) / 100)
+    const finalPrice = product.salesPercentage
+        ? Math.round(product.price - (product.price * product.salesPercentage) / 100)
         : product.price;
 
     return {
         productId: String(product._id),
         title: product.title,
-        brand: product.brand,
+        brand: product.brand?.name ?? "",
         image,
+        price: product.price,
+        salesPercentage: product.salesPercentage ?? 0,
+        colors: product.colors ?? [],
+        sizes: product.sizes ?? [],
         finalPrice,
+        // Across every variant: enough for "can this be bought at all", which is what a wishlist
+        // card and a cart card need. Per-line availability is added separately where it matters.
+        totalStock: (product.variants ?? []).reduce(
+            (sum, variant) => sum + (variant.stock || 0),
+            0
+        ),
     };
 }
 
@@ -56,26 +67,43 @@ export function getSelectedVariant(
         size = undefined;
     }
 
-    return { color, size };
+    // The row that owns this combination's count. Absent means "not stocked", which every caller
+    // treats as sold out rather than as unlimited.
+    const variant = findVariant(product, color, size);
+
+    return { color, size, variant, stock: variant?.stock ?? 0 };
 }
 
 export const getCartItemService = async (userId: string | Types.ObjectId) => {
-    const cart = await CartModel.findOne({ user: userId }).populate(
-        "items.product",
-        "title brand price salePercentage images"
-    );
+    const cart = await CartModel.findOne({ user: userId }).populate({
+        path: "items.product",
+        select: "title brand price salesPercentage colors sizes images variants",
+        populate: { path: "brand", select: "name" },
+    });
 
     const cartItems = (cart?.items || []) as unknown as CartPreview[];
 
     const items = cartItems.flatMap((cartItem) => {
         if (!cartItem.product) return [];
 
+        const formatted = formatProduct(cartItem.product);
+
         return [
             {
-                ...formatProduct(cartItem.product),
+                ...formatted,
+                // Prefer the photo that was showing when this line was added; fall back to the
+                // product's cover/first photo for items added before this field existed.
+                image: cartItem.image || formatted.image,
                 quantity: cartItem.quantity,
                 color: cartItem.color,
                 size: cartItem.size,
+                // This line's own availability, not the product's: green/L can be sold out while
+                // green/M is not.
+                availableStock: getVariantStock(
+                    { variants: cartItem.product.variants } as never,
+                    cartItem.color,
+                    cartItem.size
+                ),
             },
         ];
     });
@@ -105,17 +133,29 @@ export const addItemToCartService = async (
 
     appAssert(product, NOT_FOUND, "Product not found");
 
-    const { color, size } = getSelectedVariant(
+    const { color, size, stock } = getSelectedVariant(
         product,
         itemData.color,
         itemData.size
     );
 
     appAssert(
-        itemData.quantity <= product.stock,
+        itemData.quantity <= stock,
         BAD_REQUEST,
-        "Quantity is more than the stock of this product"
+        stock === 0
+            ? "This size and colour is sold out"
+            : `Only ${stock} left in this size and colour`
     );
+
+    // Must be one of this product's own photos — rejects an arbitrary client-supplied URL.
+    const image = itemData.image?.trim();
+    if (image) {
+        appAssert(
+            product.images.some((img) => img.url === image),
+            BAD_REQUEST,
+            "Selected image does not belong to this product"
+        );
+    }
 
     let cart = await CartModel.findOne({ user: userId });
 
@@ -137,11 +177,13 @@ export const addItemToCartService = async (
         const nextQuantity = cart.items[itemIndex].quantity + itemData.quantity;
 
         appAssert(
-            nextQuantity <= product.stock,
+            nextQuantity <= stock,
             BAD_REQUEST,
-            "Quantity is more than the stock of this product"
+            `Only ${stock} left in this size and colour`
         );
 
+        // A new image on a repeat add is intentionally NOT applied to the existing line — the
+        // image, like the line's effective price, is fixed at creation.
         cart.items[itemIndex].quantity = nextQuantity;
     } else {
         cart.items.push({
@@ -149,6 +191,7 @@ export const addItemToCartService = async (
             quantity: itemData.quantity,
             color,
             size,
+            image,
         } as any);
     }
 
@@ -169,29 +212,53 @@ export const syncCartItemService = async (
         });
     }
 
+    /*
+      Every referenced product in one query rather than one per line: a guest cart of 100 lines was
+      100 sequential round trips inside a single request.
+     */
+    const requestedIds = data.items
+        .map((item) => item.productId.trim())
+        .filter((productId) => productId && mongoose.isValidObjectId(productId));
+
+    const products = await ProductModel.find({
+        _id: { $in: requestedIds },
+        status: "active",
+    });
+
+    const productById = new Map(products.map((product) => [String(product._id), product]));
+
     for (const rawItem of data.items) {
         const productId = rawItem.productId.trim();
         const quantity = rawItem.quantity;
 
-        if (!productId || !mongoose.isValidObjectId(productId) || quantity < 1) {
+        if (!productId || quantity < 1) {
             continue;
         }
 
-        const product = await ProductModel.findOne({
-            _id: productId,
-            status: "active",
-        });
+        const product = productById.get(productId);
 
-        if (!product || product.stock < 1) {
+        if (!product) {
             continue;
         }
 
         try {
-            const { color, size } = getSelectedVariant(
+            const { color, size, stock } = getSelectedVariant(
                 product,
                 rawItem.color,
                 rawItem.size
             );
+
+            // A guest's local cart can name a combination that has since sold out; skip it
+            // rather than merging a line that can never be checked out.
+            if (stock < 1) {
+                continue;
+            }
+
+            const rawImage = rawItem.image?.trim();
+            const image =
+                rawImage && product.images.some((img) => img.url === rawImage)
+                    ? rawImage
+                    : undefined;
 
             const itemIndex = cart.items.findIndex(
                 (item) =>
@@ -202,16 +269,14 @@ export const syncCartItemService = async (
 
             if (itemIndex > -1) {
                 const nextQuantity = cart.items[itemIndex].quantity + quantity;
-                cart.items[itemIndex].quantity = Math.min(
-                    nextQuantity,
-                    product.stock
-                );
+                cart.items[itemIndex].quantity = Math.min(nextQuantity, stock);
             } else {
                 cart.items.push({
                     product: product._id,
-                    quantity: Math.min(quantity, product.stock),
+                    quantity: Math.min(quantity, stock),
                     color,
                     size,
+                    image,
                 } as any);
             }
         } catch {
@@ -243,8 +308,15 @@ export const updateCartItemService = async (
         cart.items.splice(itemIndex, 1);
     } else {
         const product = await ProductModel.findById(itemData.productId);
-        if (product && itemData.quantity > product.stock) {
-            appAssert(false, BAD_REQUEST, "Quantity is more than the stock of this product");
+        if (product) {
+            const stock = getVariantStock(product, itemData.color, itemData.size);
+            appAssert(
+                itemData.quantity <= stock,
+                BAD_REQUEST,
+                stock === 0
+                    ? "This size and colour is sold out"
+                    : `Only ${stock} left in this size and colour`
+            );
         }
         cart.items[itemIndex].quantity = itemData.quantity;
     }
