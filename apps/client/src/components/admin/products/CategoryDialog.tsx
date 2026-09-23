@@ -1,220 +1,107 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useCreateCategory } from "@/hooks/product/useCreateCategory";
+import { useCreateSubCategory } from "@/hooks/product/useCreateSubCategory";
+import { useDeleteCategory } from "@/hooks/product/useDeleteCategory";
+import { useDeleteSubCategory } from "@/hooks/product/useDeleteSubCategory";
 import { useUpdateCategory } from "@/hooks/product/useUpdateCategory";
+import { useUpdateSubCategory } from "@/hooks/product/useUpdateSubCategory";
 import type { Category } from "@/types/product.types";
-import { ChevronLeft, ChevronRight, Pencil, Tag } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Shapes, Tag } from "lucide-react";
+import { useState } from "react";
+import NameListEditor from "./NameListEditor";
 
 type CategoryDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: Category[];
-  onSaved: () => Promise<void>;
 };
 
-const CategoryDialog = ({ open, onOpenChange, categories, onSaved }: CategoryDialogProps) => {
-  const [name, setName] = useState("");
-  const [editCategory, setEditCategory] = useState<Category | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+const CategoryDialog = ({ open, onOpenChange, categories }: CategoryDialogProps) => {
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
 
-  const createCategoryMutation = useCreateCategory();
-  const updateCategoryMutation = useUpdateCategory();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+  const createSubCategory = useCreateSubCategory();
+  const updateSubCategory = useUpdateSubCategory();
+  const deleteSubCategory = useDeleteSubCategory();
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 640) {
-        setItemsPerPage(5);
-      } else {
-        setItemsPerPage(10);
-      }
-    };
+  // Fall back to the first category so the types pane is never blank when categories exist
+  // (also covers the selected one being deleted).
+  const selectedCategory =
+    categories.find((category) => category._id === selectedCategoryId) ?? categories[0] ?? null;
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const totalPages = Math.max(1, Math.ceil(categories.length / itemsPerPage));
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [categories.length, itemsPerPage, totalPages, currentPage]);
-
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedCategories = categories.slice(startIndex, startIndex + itemsPerPage);
-
-  async function handleSave() {
-    if (!name.trim()) return;
-
-    try {
-      setSaving(true);
-
-      if (editCategory) {
-        await updateCategoryMutation.mutateAsync({
-          categoryId: editCategory._id,
-          data: { name: name.trim() },
-        });
-      } else {
-        await createCategoryMutation.mutateAsync({
-          name: name.trim(),
-        });
-      }
-
-      setName("");
-      setEditCategory(null);
-      await onSaved();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const handleEdit = (getCurrentCategory: Category) => {
-    setEditCategory(getCurrentCategory);
-    setName(getCurrentCategory.name);
-  };
-
-  const handleCancelEdit = () => {
-    setEditCategory(null);
-    setName("");
-  };
-
-  function handleClose(nextOpen: boolean) {
-    if (!nextOpen) {
-      setName("");
-      setEditCategory(null);
-      setCurrentPage(1);
-    }
-
-    onOpenChange(nextOpen);
-  }
-
-  const isSaving = saving || createCategoryMutation.isPending || updateCategoryMutation.isPending;
+  // Plain, non-optional locals instead of `selectedCategory?.x` inline in JSX: the React
+  // Compiler's auto-memoization hoists the dependency check on an optional chain to a bare
+  // (non-guarded) property read, which throws when `selectedCategory` is null. An `if` guards
+  // the read itself instead of relying on `?.` surviving compilation.
+  const selectedCategoryValueId = selectedCategory ? selectedCategory._id : undefined;
+  const selectedCategoryName = selectedCategory ? selectedCategory.name : "";
+  const selectedCategoryTypes = selectedCategory ? selectedCategory.subCategories ?? [] : [];
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-xl md:max-w-2xl font-poppins">
-        <DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto font-poppins">
+        <DialogHeader className="space-y-1">
           <DialogTitle className="font-poppins text-lg">Manage Categories</DialogTitle>
+          <DialogDescription className="font-poppins">
+            Pick a category to manage its types. Anything still used by a product can't be deleted.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 pt-1">
-          <div className="flex items-center gap-2">
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder={editCategory ? "Edit category name..." : "Enter category name you want to add !!"}
-              className="flex-1 font-poppins w-full"
-            />
-            <Button
-              onClick={handleSave}
-              className="cursor-pointer font-poppins min-w-19"
-              disabled={isSaving || !name.trim()}
-            >
-              {isSaving ? "Saving..." : editCategory ? "Update" : "Add"}
-            </Button>
-            {editCategory && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCancelEdit}
-                className="cursor-pointer font-poppins"
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
 
-          <Separator  />
-
-          <div className="min-h-50">
-            {categories.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-48 text-muted-foreground text-sm">
-                <Tag className="w-8 h-8 mb-2 opacity-60" />
-                No categories found.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {paginatedCategories.map((cat) => (
-                  <div
-                    key={cat._id}
-                    className="flex items-center justify-between px-2 py-1 rounded-lg border border-slate-400  bg-card text-card-foreground shadow-xs hover:border-primary/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 truncate pr-2">
-                      <Tag className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-sm truncate font-poppins">{cat.name}</span>
-                    </div>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
-                      onClick={() => handleEdit(cat)}
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {categories.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-sm text-muted-foreground">
-              <span className="text-xs sm:text-sm font-poppins">
-                Showing <span className="font-medium text-foreground">{startIndex + 1}</span>-
-                <span className="font-medium text-foreground">
-                  {Math.min(startIndex + itemsPerPage, categories.length)}
-                </span>{" "}
-                of <span className="font-medium text-foreground">{categories.length}</span> categories
-              </span>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  className="h-8 px-2.5 cursor-pointer font-poppins text-xs"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5 mr-1" />
-                  Prev
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      type="button"
-                      variant={currentPage === page ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                      className="h-8 w-8 p-0 cursor-pointer font-poppins text-xs"
-                    >
-                      {page}
-                    </Button>
-                  ))}
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  className="h-8 px-2.5 cursor-pointer font-poppins text-xs"
-                >
-                  Next
-                  <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                </Button>
-              </div>
+        {/* Both panes are built the same way — a title row of fixed height, the add form, a
+            five-row list box and its pager — so the two columns line up line for line. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <section className="flex flex-col gap-3 min-w-0">
+            <div className="flex h-6 items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-foreground">Categories</h3>
+              <span className="text-xs text-muted-foreground">{categories.length}</span>
             </div>
-          )}
+            <NameListEditor
+              key={String(open)}
+              items={categories}
+              noun="category"
+              icon={Tag}
+              emptyLabel="No categories yet. Add one, e.g. Men or Women."
+              selectedId={selectedCategoryValueId}
+              onSelect={setSelectedCategoryId}
+              onCreate={async (name) => {
+                const response = await createCategory.mutateAsync({ name });
+                setSelectedCategoryId(response.data._id);
+              }}
+              onRename={(categoryId, name) => updateCategory.mutateAsync({ categoryId, data: { name } })}
+              onDelete={(categoryId) => deleteCategory.mutateAsync(categoryId)}
+            />
+          </section>
+
+          <section className="flex flex-col gap-3 min-w-0 border-t pt-4 md:border-t-0 md:border-l md:pl-6 md:pt-0">
+            <div className="flex h-6 items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-foreground truncate">
+                {selectedCategory ? `Types in ${selectedCategoryName}` : "Types"}
+              </h3>
+              <span className="text-xs text-muted-foreground">{selectedCategoryTypes.length}</span>
+            </div>
+            {/* Keyed on the category so a half-typed name doesn't carry over to another one. */}
+            <NameListEditor
+              key={`${open}:${selectedCategoryValueId ?? "none"}`}
+              items={selectedCategoryTypes}
+              noun="type"
+              icon={Shapes}
+              disabled={!selectedCategory}
+              emptyLabel={
+                selectedCategory
+                  ? `No types in ${selectedCategoryName} yet, e.g. Shirt, Jeans.`
+                  : "Add a category first."
+              }
+              onCreate={(name) =>
+                selectedCategoryValueId
+                  ? createSubCategory.mutateAsync({ name, category: selectedCategoryValueId })
+                  : Promise.resolve()
+              }
+              onRename={(subCategoryId, name) => updateSubCategory.mutateAsync({ subCategoryId, data: { name } })}
+              onDelete={(subCategoryId) => deleteSubCategory.mutateAsync(subCategoryId)}
+            />
+          </section>
         </div>
       </DialogContent>
     </Dialog>
