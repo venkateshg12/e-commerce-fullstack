@@ -3,13 +3,20 @@ import CategoryModel from "../models/category.model";
 import UserModel from "../models/user.model";
 import { OrderModel } from "../models/order.model";
 import { ALLOWED_ORDER_STATUSES } from "@repo/types";
+import { cache } from "../utils/cache";
+
+// Admin-only aggregates: a minute of staleness is fine, and nothing invalidates them.
+const DASHBOARD_TTL_SECONDS = 60;
 
 type TotalSaleRow = {
     _id: null;
     totalSales: number;
 };
 
-export const getDashboardLiteService = async () => {
+export const getDashboardLiteService = () =>
+    cache.getOrSet("cache:dashboard:lite", loadDashboardLite, DASHBOARD_TTL_SECONDS);
+
+const loadDashboardLite = async () => {
     const [
         totalProducts,
         totalCategories,
@@ -61,7 +68,11 @@ type TopProductRow = {
  * paid days after it was placed counts when the money arrived. Order-status counts and recent
  * orders are dated by `createdAt`. Low stock is current state, so it ignores the range.
  */
-export const getDashboardService = async (days: number) => {
+// `days` is already limited to 7, 30 or 90 by `dashboardQuerySchema`, so this is three keys at most.
+export const getDashboardService = (days: number) =>
+    cache.getOrSet(`cache:dashboard:${days}`, () => loadDashboard(days), DASHBOARD_TTL_SECONDS);
+
+const loadDashboard = async (days: number) => {
     const now = new Date();
     const start = new Date(now.getTime() - days * DAY_MS);
     const previousStart = new Date(start.getTime() - days * DAY_MS);
