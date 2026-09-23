@@ -7,7 +7,7 @@ export const wishlistProductSchema = z.object({
 export type WishlistProductSchema = z.infer<typeof wishlistProductSchema>;
 
 export const syncWishlistSchema = z.object({
-    productIds: z.array(z.string().trim().min(1)).default([]),
+    productIds: z.array(z.string().trim().min(1)).max(200).default([]),
 });
 
 export type SyncWishlistSchema = z.infer<typeof syncWishlistSchema>;
