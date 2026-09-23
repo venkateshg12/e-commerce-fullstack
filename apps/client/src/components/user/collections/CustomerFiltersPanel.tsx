@@ -14,6 +14,9 @@ import type {
 
 type CustomerFiltersPanelProps = {
   categories: ProductCategory[];
+  // The types of whichever category is in play — the chosen one, or the first as a stand-in.
+  subCategories: NamedRef[];
+  activeCategoryName: string;
   brands: NamedRef[];
   filters: CustomerProductFilters;
   availableColors: string[];
@@ -24,6 +27,8 @@ type CustomerFiltersPanelProps = {
 
 const CustomerFiltersPanel = ({
   categories,
+  subCategories,
+  activeCategoryName,
   brands,
   filters,
   availableColors,
@@ -93,6 +98,27 @@ const CustomerFiltersPanel = ({
             )
           ) : (
             <p className="facet-empty">No categories available</p>
+          )}
+        </div>
+      </div>
+
+      <div className="facet-group">
+        <p className="facet-group-title">
+          Type
+          {activeCategoryName ? (
+            <span className="facet-group-hint">{activeCategoryName}</span>
+          ) : null}
+        </p>
+
+        <div className="facet-options-wrap">
+          {subCategories.length ? (
+            subCategories.map((item) =>
+              item?._id
+                ? renderOption("subCategory", item._id, item.name || "")
+                : null,
+            )
+          ) : (
+            <p className="facet-empty">No types in this category</p>
           )}
         </div>
       </div>
