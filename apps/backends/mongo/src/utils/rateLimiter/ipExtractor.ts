@@ -24,7 +24,7 @@ const EDGE_HEADERS = [
 /*
   Compile trusted proxy configuration once at startup.
  */
-const trustProxy = createTrustProxy(TRUSTED_PROXY_CIDRS);
+export const trustProxy = createTrustProxy(TRUSTED_PROXY_CIDRS);
 
 /*
   Extract the client IP used by the rate limiter.
