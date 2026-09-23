@@ -16,5 +16,5 @@ orderRouter.get("/orders", authenticate, protectedApiLimiter, getOrdersHandler);
 orderRouter.patch("/orders/:orderId/return", authenticate, protectedApiLimiter, returnOrderHandler);
 orderRouter.patch("/orders/:orderId/cancel", authenticate, protectedApiLimiter, cancelOrderHandler);
 
-orderRouter.get("/admin/orders", authenticate, requireAdmin, getAllOrdersHandler);
-orderRouter.patch("/orders/:orderId/status", authenticate, requireAdmin, updateOrderStatusHandler);
+orderRouter.get("/admin/orders", authenticate, requireAdmin, protectedApiLimiter, getAllOrdersHandler);
+orderRouter.patch("/orders/:orderId/status", authenticate, requireAdmin, protectedApiLimiter, updateOrderStatusHandler);

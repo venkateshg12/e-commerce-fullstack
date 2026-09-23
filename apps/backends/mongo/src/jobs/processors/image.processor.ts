@@ -2,6 +2,8 @@ import { Job } from "bullmq";
 import ProductModel from "../../models/product.model";
 import { BannerModel } from "../../models/banner.model";
 import { destroyManyFromCloudinary, uploadSingleBuffersToCloudinary } from "../../utils/cloudinary";
+import { cache } from "../../utils/cache";
+import { invalidateProductDetails } from "../../services/product.service";
 import {
   DeleteCloudinaryAssetsJobPayload,
   ProcessBannerImageJobPayload,
@@ -77,6 +79,14 @@ export async function processProductImagesJob(
       { $set: { "images.0.isCover": true } }
     );
 
+    /*
+      The worker may run in its own process; the cache lives in Redis, so this reaches the API's
+      cache all the same. Only THIS product's page is dropped — the listings, which now show its
+      images, are refreshed by the version bump.
+     */
+    await invalidateProductDetails([productId]);
+    await cache.bump("products");
+
     console.log(`[ImageProcessor] Successfully processed and appended ${files.length} images for Product ${productId}`);
   } catch (err: any) {
     console.error(`[ImageProcessor Error] Product ${productId} failed: ${err.message}`);
@@ -93,6 +103,8 @@ export async function processProductImagesJob(
           uploadError: err.message || "Failed to process product images",
         },
       });
+      await invalidateProductDetails([productId]);
+      await cache.bump("products");
     }
 
     throw err;
@@ -129,6 +141,8 @@ export async function processBannerImagesJob(
         createdBy: userId,
       }))
     );
+
+    await cache.bump("banners");
 
     console.log(
       `[ImageProcessor] Successfully processed ${files.length} banner images for User ${userId}`

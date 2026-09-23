@@ -1,6 +1,7 @@
-import type { AdminPromosResponse, PromoFormValues } from "@/types/coupon.types";
+import type { AdminPromosResponse, PromoFormValues } from "@/types/promo.types";
 import type { SuccessResponse } from "@/types/api.types";
-import type { UpdatePromoSchema } from "@repo/types";
+import type { ApplyPromoResponse } from "@/types/checkout.types";
+import type { ApplyPromoSchema, UpdatePromoSchema } from "@repo/types";
 import API from "@/lib/api";
 import type { VerifiedResponse } from "@/types/auth.types";
 
@@ -40,5 +41,20 @@ export const updatePromo = async (
 
 export const deletePromo = async (promoId: string): Promise<SuccessResponse<VerifiedResponse>> => {
     const response = await API.delete<SuccessResponse<{ message: string }>>(`/promos/${promoId}`);
+    return response.data;
+};
+
+// Coupons a shopper can use right now: in their date window with uses left.
+export const getActivePromos = async (): Promise<SuccessResponse<AdminPromosResponse>> => {
+    const response = await API.get<SuccessResponse<AdminPromosResponse>>("/promos/active");
+    return response.data;
+};
+
+// Customer-facing. Checks the code exists, is in its date window and has uses left — but NOT that
+// the cart clears `minimumOrderValue`, so the caller has to compare that itself.
+export const applyPromo = async (
+    payload: ApplyPromoSchema
+): Promise<SuccessResponse<ApplyPromoResponse>> => {
+    const response = await API.post<SuccessResponse<ApplyPromoResponse>>("/promos/apply", payload);
     return response.data;
 };

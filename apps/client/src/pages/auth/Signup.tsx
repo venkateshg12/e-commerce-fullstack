@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { AlertType } from "@/lib/types";
+import type { AlertType } from "@/types";
 import { useRegister } from "@/hooks/auth/useRegister";
 import { AlertPopup } from "@/components/ui/alert-popup";
-import { LoadingDots } from "@/constants/constant";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 

@@ -15,5 +15,44 @@ services:
       timeout: 3s
       retries: 5
 
+  # Response cache. A separate instance because the one above must stay `noeviction` (BullMQ loses
+  # jobs otherwise), while a cache has to evict to stay bounded. `volatile-lru` only evicts keys with
+  # a TTL: every cache entry has one, the namespace version counters don't. No persistence — an
+  # empty cache after a restart is the correct state.
+
+  
+  redis-cache:
+    image: redis:7
+    container_name: ecommerce-redis-cache
+    ports:
+      - "6380:6379"
+    command: redis-server --save "" --appendonly no --maxmemory 256mb --maxmemory-policy volatile-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Local Postgres for apps/backends/postgres. Currently unused — that service's DATABASE_URL
+  # points at Neon instead — kept here for whoever wants to run migrations/tests against a local
+  # database rather than the shared Neon one.
+  postgres:
+    image: postgres:16
+    container_name: ecommerce-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: shopymart
+      POSTGRES_PASSWORD: shopymart
+      POSTGRES_DB: shopymart
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopymart -d shopymart"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 volumes:
   redis_data:
+  postgres_data:

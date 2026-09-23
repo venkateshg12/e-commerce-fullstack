@@ -1,9 +1,22 @@
 import { BannerModel } from "../models/banner.model";
+import BrandModel from "../models/brand.model";
 import CategoryModel from "../models/category.model";
 import ProductModel from "../models/product.model";
 import { PromoModel } from "../models/promo.model";
+import { cache } from "../utils/cache";
 
-export const getHomeFeedService = async () => {
+// Short, because the feed carries live numbers — stock totals and promo uses left — that change on
+// every order rather than through an admin edit that bumps a version.
+const HOME_FEED_TTL_SECONDS = 60;
+
+export const getHomeFeedService = async () =>
+    cache.getOrSet(
+        await cache.versionedKey(["catalog", "products", "promos", "banners"], "home"),
+        loadHomeFeed,
+        HOME_FEED_TTL_SECONDS
+    );
+
+const loadHomeFeed = async () => {
     const now = new Date();
 
     const [banners, categories, recentProducts, promos] = await Promise.all([
@@ -29,7 +42,7 @@ export const getHomeFeedService = async () => {
         banners: banners.map((bannerItem) => ({
             _id: String(bannerItem._id),
             imageUrl: bannerItem.imageUrl,
-            createdAt: bannerItem.createdAt.toISOString(),
+            createdAt: bannerItem.createdAt instanceof Date ? bannerItem.createdAt.toISOString() : String(bannerItem.createdAt ?? ""),
         })),
         categories: categories.map((categoryItem) => ({
             _id: String(categoryItem._id),
@@ -63,7 +76,7 @@ export const getHomeFeedService = async () => {
                     (sum, variant) => sum + (variant.stock || 0),
                     0
                 ),
-                createdAt: recentProductItem.createdAt.toISOString(),
+                createdAt: recentProductItem.createdAt instanceof Date ? recentProductItem.createdAt.toISOString() : String(recentProductItem.createdAt ?? ""),
             };
         }),
         coupons: promos.map((promoItem) => ({
@@ -72,7 +85,7 @@ export const getHomeFeedService = async () => {
             percentage: promoItem.percentage,
             count: promoItem.count,
             minimumOrderValue: promoItem.minimumOrderValue,
-            endsAt: promoItem.endsAt.toISOString(),
+            endsAt: promoItem.endsAt instanceof Date ? promoItem.endsAt.toISOString() : String(promoItem.endsAt ?? ""),
         })),
     };
 };

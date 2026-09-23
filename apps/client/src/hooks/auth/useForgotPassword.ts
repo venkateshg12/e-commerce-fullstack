@@ -1,5 +1,5 @@
 import { forgotPassword } from "@/api/auth"
-import type { FailureResponse, SuccessResponse, VerifiedResponse } from "@/lib/types";
+import type { FailureResponse, SuccessResponse, VerifiedResponse } from "@/types";
 import { useMutation } from "@tanstack/react-query"
 
 export const useForgotPassword = () => {

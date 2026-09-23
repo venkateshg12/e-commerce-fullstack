@@ -1,7 +1,7 @@
 import { getPromos } from "@/api/promo";
 import { usePromoStore } from "@/store/promo.store";
 import type { FailureResponse, SuccessResponse } from "@/types";
-import type { AdminPromosResponse } from "@/types/coupon.types";
+import type { AdminPromosResponse } from "@/types/promo.types";
 import { useQuery } from "@tanstack/react-query";
 
 export const useGetPromos = () => {

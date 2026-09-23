@@ -1,3 +1,5 @@
+import { formatDiscount } from "@/lib/price";
+import { getTotalStock } from "@/lib/variants";
 import { AlertPopup } from "@/components/ui/alert-popup";
 import { Button } from "@/components/ui/button";
 import {
@@ -86,7 +88,7 @@ const ProductTable = ({ products = [], onEdit }: ProductTableProps) => {
     }
 
     return (
-        <div className="w-full overflow-hidden rounded-xl border bg-card shadow-xs">
+        <div className="scrollbar-slim w-full overflow-x-auto rounded-xl border bg-card shadow-xs">
             <Table>
                 <TableHeader className="bg-muted/50">
                     <TableRow>
@@ -163,18 +165,29 @@ const ProductTable = ({ products = [], onEdit }: ProductTableProps) => {
                                     </span>
                                 </TableCell>
 
+                                {/* The selling price leads, the original is struck through beside it —
+                                    the same way the storefront shows it, and the pair the dialog asks for. */}
                                 <TableCell className="font-poppins font-semibold">
-                                    ₹{item.price.toFixed(2)}
+                                    ₹{(item.price - (item.price * (item.salesPercentage || 0)) / 100).toFixed(2)}
                                     {item.salesPercentage && item.salesPercentage > 0 ? (
-                                        <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-mono">
-                                            -{item.salesPercentage}%
-                                        </span>
+                                        <>
+                                            <span className="ml-1.5 text-xs font-normal text-muted-foreground line-through">
+                                                ₹{item.price.toFixed(2)}
+                                            </span>
+                                            <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-mono">
+                                                -{formatDiscount(item.salesPercentage)}%
+                                            </span>
+                                        </>
                                     ) : null}
                                 </TableCell>
 
                                 <TableCell className="font-poppins">
-                                    <span className={`text-xs font-medium ${item.stock > 0 ? "text-foreground" : "text-destructive font-semibold"}`}>
-                                        {item.stock > 0 ? `${item.stock} in stock` : "Out of stock"}
+                                    {/* The sum of the product's variants — there is no product-level
+                                        count any more, and mirroring one would only drift. */}
+                                    <span className={`text-xs font-medium ${getTotalStock(item.variants) > 0 ? "text-foreground" : "text-destructive font-semibold"}`}>
+                                        {getTotalStock(item.variants) > 0
+                                            ? `${getTotalStock(item.variants)} in stock`
+                                            : "Out of stock"}
                                     </span>
                                 </TableCell>
 

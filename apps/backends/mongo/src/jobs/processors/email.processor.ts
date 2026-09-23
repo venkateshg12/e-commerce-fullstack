@@ -1,6 +1,7 @@
 import { Job, UnrecoverableError } from "bullmq";
 import { PasswordResetPayload, VerifyEmailPayload } from "../interfaces/jobPayload";
 import { getPasswordResetEmail, getVerificationEmail, sendMail } from "../../utils/email";
+import UserModel from "../../models/user.model";
 
 export async function processVerifyEmail(job: Job<VerifyEmailPayload>) {
     const { userId, email, verificationToken } = job.data;
@@ -9,6 +10,18 @@ export async function processVerifyEmail(job: Job<VerifyEmailPayload>) {
 
     if (!email || !email.includes('@')) {
         throw new UnrecoverableError(`Invalid email format: ${email}`);
+    }
+
+    // Check if user exists and if already verified (Idempotency check)
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        job.log(`[VerifyEmail] User ${userId} no longer exists. Aborting.`);
+        return { status: 'skipped', reason: 'User not found' };
+    }
+
+    if (user.verified) {
+        job.log(`[VerifyEmail] User ${userId} is already verified. Skipping email delivery.`);
+        return { status: 'skipped', reason: 'User already verified' };
     }
 
     const emailTemplate = getVerificationEmail(verificationToken);
@@ -35,6 +48,13 @@ export async function processPasswordReset(job: Job<PasswordResetPayload>) {
 
     if (!email || !email.includes('@')) {
         throw new UnrecoverableError(`Invalid email format: ${email}`);
+    }
+
+    // Check if user exists
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        job.log(`[PasswordReset] User ${userId} no longer exists. Aborting.`);
+        return { status: 'skipped', reason: 'User not found' };
     }
 
     const emailTemplate = getPasswordResetEmail(resetToken);

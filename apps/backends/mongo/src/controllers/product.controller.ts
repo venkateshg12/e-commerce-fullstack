@@ -1,9 +1,10 @@
-import mongoose from "mongoose";
-import { ACCEPTED, BAD_REQUEST, CONFLICT, CREATED, NOT_FOUND, OK } from "../constants/https";
-import CategoryModel from "../models/category.model";
-import { getCategoriesWithSubCategoriesService } from "../services/catalog.service";
-import ProductModel from "../models/product.model";
-import { appAssert, catchError, ok } from "../utils";
+import { ACCEPTED, CREATED, OK } from "../constants/https";
+import {
+    createCategoryService,
+    getCategoriesWithSubCategoriesService,
+    updateCategoryService,
+} from "../services/catalog.service";
+import { catchError, ok } from "../utils";
 import {
     categorySchema,
     createProductSchema,
@@ -13,7 +14,6 @@ import {
     productAppliedFilterListQuerySchema,
     setImageColorSchema,
     uploadImageColorsSchema,
-    type ProductSort,
 } from "@repo/types";
 import {
     createProductService,
@@ -23,7 +23,9 @@ import {
     changeProductCoverService,
     setProductImageColorService,
     deleteProductService,
-    PRODUCT_POPULATE,
+    getProductByIdService,
+    getProductFacetsService,
+    listProductsService,
 } from "../services/product.service";
 
 
@@ -60,7 +62,8 @@ export const uploadProductImagesHandler = catchError(
     }
 );
 
-// Sets which colour a single already-uploaded image depicts, then re-derives product.colors.
+// Sets which colour a single already-uploaded image depicts. The colour must already be in the
+// product's own `colors` palette — see setProductImageColorService.
 
 export const setProductImageColorHandler = catchError(
     async (req, res) => {
@@ -112,118 +115,46 @@ export const productCategoryHandler = catchError(
 
 export const createProductCategoryHandler = catchError(
     async (req, res) => {
-        const { name } = categorySchema.parse(req.body);
-
-        const existing = await CategoryModel.findOne({ name });
-        appAssert(!existing, CONFLICT, "Category name already exists");
-
-        const category = await CategoryModel.create({ name });
-        res.status(CREATED).json(ok(category));
+        const data = categorySchema.parse(req.body);
+        const category = await createCategoryService(data);
+        return res.status(CREATED).json(ok(category));
     }
 );
 
 export const updateProductCategoryHandler = catchError(
     async (req, res) => {
-        const categoryId = req.params.id as string;
-        appAssert(mongoose.isValidObjectId(categoryId), BAD_REQUEST, "Invalid category ID");
-
-        const { name } = categorySchema.parse(req.body);
-
-        const existingCategory = await CategoryModel.findById(categoryId);
-        appAssert(existingCategory, NOT_FOUND, "Category not found");
-
-        const duplicate = await CategoryModel.findOne({ name, _id: { $ne: categoryId } });
-        appAssert(!duplicate, CONFLICT, "Category name already exists");
-
-        existingCategory.name = name;
-
-        await existingCategory.save();
-        res.status(OK).json(ok(existingCategory));
+        const data = categorySchema.parse(req.body);
+        const category = await updateCategoryService(req.params.id as string, data);
+        return res.status(OK).json(ok(category));
     }
 );
 
 
 export const getProductFacetsHandler = catchError(
     async (req, res) => {
-        // Public, unauthenticated endpoint — always scope to what a storefront visitor may
-        // see. Intentionally ignores every other filter (category/brand/size), matching the
-        // "facet list stays stable while filtering" behavior this endpoint replaces.
-        const colors = await ProductModel.distinct("colors", { status: "active" });
-
-        return res.status(OK).json(ok({
-            colors: colors.filter(Boolean).sort((a, b) => a.localeCompare(b)),
-        }));
+        const facets = await getProductFacetsService();
+        return res.status(OK).json(ok(facets));
     }
 );
 
 export const searchProductHandler = catchError(
     async (req, res) => {
-        const { search, category, brand, color, size, subCategory, sort } = productAppliedFilterListQuerySchema.parse(req.query);
+        const filters = productAppliedFilterListQuerySchema.parse(req.query);
+        // Only an admin may see products that aren't active.
+        const { items, ...meta } = await listProductsService(filters, {
+            includeInactive: req.role === "admin",
+        });
 
-        const query: Record<string, unknown> = {};
-
-        if (search) {
-            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            query.title = { $regex: escapedSearch, $options: "i" };
-        }
-        // A malformed id would otherwise reach Mongo and fail the cast with a 500.
-        if (category) {
-            appAssert(mongoose.isValidObjectId(category), BAD_REQUEST, "Invalid category ID");
-            query.category = category;
-        }
-        if (brand) {
-            appAssert(mongoose.isValidObjectId(brand), BAD_REQUEST, "Invalid brand ID");
-            query.brand = brand;
-        }
-        if (color) {
-            query.colors = color;
-        }
-        if (size) {
-            query.sizes = size;
-        }
-        if (subCategory) {
-            appAssert(mongoose.isValidObjectId(subCategory), BAD_REQUEST, "Invalid type ID");
-            query.subCategory = subCategory;
-        }
-
-        // If not an admin, only allow viewing active products
-        if (req.role !== "admin") {
-            query.status = "active";
-        }
-
-        let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
-
-        if (sort === "price-low") {
-            sortOption = { price: 1 };
-        } else if (sort === "price-high") {
-            sortOption = { price: -1 };
-        }
-
-
-
-        const products = await ProductModel.find(query)
-            .populate(PRODUCT_POPULATE)
-            .sort(sortOption);
-
-        return res.status(OK).json(ok(products));
+        return res.status(OK).json(ok(items, meta));
     }
 );
 
 
 export const searchProductByIdHandler = catchError(
     async (req, res) => {
-        const productId = req.params.id as string;
-        appAssert(mongoose.isValidObjectId(productId), BAD_REQUEST, "Invalid product ID");
-
-        const query: Record<string, unknown> = { _id: productId };
-
-        // If not an admin, only allow viewing active products
-        if (req.role !== "admin") {
-            query.status = "active";
-        }
-
-        const product = await ProductModel.findOne(query).populate(PRODUCT_POPULATE);
-        appAssert(product, NOT_FOUND, "Product not found");
+        const product = await getProductByIdService(req.params.id as string, {
+            includeInactive: req.role === "admin",
+        });
 
         return res.status(OK).json(ok(product));
     }

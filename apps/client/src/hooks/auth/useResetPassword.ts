@@ -1,5 +1,5 @@
 import { resetPassword } from "@/api/auth"
-import type { FailureResponse, SuccessResponse, VerifiedResponse } from "@/lib/types";
+import type { FailureResponse, SuccessResponse, VerifiedResponse } from "@/types";
 import type { ResetPasswordSchema } from "@repo/types";
 import { useMutation } from "@tanstack/react-query"
 

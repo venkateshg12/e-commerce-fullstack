@@ -10,9 +10,14 @@ export const AUTH_LOGIN_SOURCE_PREFIX = "rl:auth:login:source";
 export const AUTH_FORGOT_ACCOUNT_PREFIX = "rl:auth:forgot:account";
 export const AUTH_FORGOT_SOURCE_PREFIX = "rl:auth:forgot:source";
 export const AUTH_REGISTER_PREFIX = "rl:auth:register";
+export const AUTH_REGISTER_SOURCE_PREFIX = "rl:auth:register:source";
 export const AUTH_FORGOT_PASS_PREFIX = "rl:auth:forgot";
+export const AUTH_RESET_PREFIX = "rl:auth:reset";
 export const AUTH_VERIFY_PREFIX = "rl:auth:verify";
+export const AUTH_VERIFY_RESEND_SOURCE_PREFIX = "rl:auth:verify:resend:source";
+export const AUTH_VERIFY_RESEND_ACCOUNT_PREFIX = "rl:auth:verify:resend:account";
 export const AUTH_REFRESH_PREFIX = "rl:auth:refresh";
+export const AUTH_REFRESH_SOURCE_PREFIX = "rl:auth:refresh:source";
 
 export const CHECKOUT_PREFIX = "rl:checkout";
 export const PROMO_APPLY_PREFIX = "rl:promo:apply";

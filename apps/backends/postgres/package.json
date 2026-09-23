@@ -1,0 +1,48 @@
+{
+  "name": "postgres-service",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "db:test": "tsx src/scripts/test-connection.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "contract:emit": "prisma contract emit",
+    "db:plan": "prisma contract emit && prisma migration plan --name",
+    "db:apply": "pnpm run db:sql && prisma db migrate",
+    "db:sql": "tsx src/scripts/write-migration-sql.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^26.6.2",
+    "@types/pg": "^8.20.4",
+    "prisma": "8.0.0-rc.15",
+    "tsx": "^4.22.4",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@prisma/cli-engine": "^0.4.0",
+    "@prisma/orm-postgres": "8.0.0-rc.11",
+    "@repo/types": "workspace:*",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "morgan": "^1.11.0",
+    "multer": "^2.2.0",
+    "pg": "^8.23.0",
+    "zod": "^4.4.3"
+  }
+}
