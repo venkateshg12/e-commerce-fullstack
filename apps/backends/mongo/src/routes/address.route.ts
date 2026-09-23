@@ -5,7 +5,7 @@ import { protectedApiLimiter } from "../config/rateLimiter";
 
 export const addressRouter = Router();
 
-addressRouter.use(authenticate, protectedApiLimiter);
+addressRouter.use("/address", authenticate, protectedApiLimiter);
 
 addressRouter.get("/address", getAddressHandler);
 addressRouter.post("/address", createAddressHandler);
