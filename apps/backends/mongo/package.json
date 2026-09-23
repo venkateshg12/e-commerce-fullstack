@@ -10,7 +10,9 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "migrate:catalog": "tsx src/scripts/migrate-catalog.ts",
-    "migrate:variants": "tsx src/scripts/migrate-variants.ts"
+    "migrate:variants": "tsx src/scripts/migrate-variants.ts",
+    "migrate:emails": "tsx src/scripts/normalize-emails.ts",
+    "check:categories": "tsx src/scripts/check-duplicate-categories.ts"
   },
   "keywords": [],
   "author": "",
