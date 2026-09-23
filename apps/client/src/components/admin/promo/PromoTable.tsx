@@ -160,7 +160,7 @@ const PromoTable = ({
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-xl border bg-card shadow-xs">
+    <div className="scrollbar-slim w-full overflow-x-auto rounded-xl border bg-card shadow-xs">
       <Table className="min-w-225">
         <TableHeader className="bg-muted/50">
           <TableRow className="hover:bg-transparent">
