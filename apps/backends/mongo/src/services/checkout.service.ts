@@ -7,6 +7,8 @@ import ProductModel from "../models/product.model";
 import { OrderModel } from "../models/order.model";
 import { BAD_REQUEST, CONFLICT, NOT_FOUND } from "../constants/https";
 import { appAssert } from "../utils/errors";
+import { cache } from "../utils/cache";
+import { invalidateProductDetails } from "./product.service";
 import { getVariantStock, variantFilter } from "../utils/variants";
 import {
     ConfirmCheckoutSessionSchema,
@@ -386,22 +388,50 @@ export const confirmCheckoutSessionService = async (
         "Payment has not been captured"
     );
 
-    /*
-      Start MongoDB transaction.
-     
-      Everything below is one atomic operation:
-      - decrease stock
-      - decrease promo usage
-      - clear cart
-      - mark order as paid
-     */
-    const session =
-        await mongoose.startSession();
+    await fulfillPaidOrder(order._id, data.razorpay_payment_id);
+
+    return {
+        _id: String(order._id),
+    };
+};
+
+/**
+ * Turns a paid-for order into a placed one: stock down, promo use spent, the bought lines out of the
+ * cart, the order marked paid. One atomic operation, and idempotent — the order is re-read INSIDE
+ * the transaction and a second call returns without touching anything.
+ *
+ * That re-read is what makes it safe to call from more than one place, and both matter:
+ *   - two confirms at once (a double-click, a retry, a second tab) used to pass the "already paid"
+ *     check outside the transaction and then each decrement stock;
+ *   - the Razorpay webhook calls it for a payment whose customer never came back to confirm.
+ */
+export const fulfillPaidOrder = async (
+    orderId: Types.ObjectId | string,
+    paymentId: string
+): Promise<{ fulfilled: boolean }> => {
+    const session = await mongoose.startSession();
+
+    let fulfilled = false;
+    let fulfilledProductIds: unknown[] = [];
+    let fulfilledPromoCode = "";
 
     try {
         await session.withTransaction(
             async () => {
+                // Reset per attempt: withTransaction re-runs this callback on a write conflict.
+                fulfilled = false;
+                fulfilledProductIds = [];
+                fulfilledPromoCode = "";
 
+                const order = await OrderModel.findById(orderId).session(session);
+                appAssert(order, NOT_FOUND, "Order not found");
+
+                // Already done — by the other confirm, or by the webhook. Nothing to repeat.
+                if (order.paymentStatus === "paid") {
+                    return;
+                }
+
+                const userId = order.user;
 
                 //  Decrease stock atomically.
 
@@ -495,8 +525,7 @@ export const confirmCheckoutSessionService = async (
                 order.paymentStatus = "paid";
                 order.orderStatus = "placed";
 
-                order.paymentId =
-                    data.razorpay_payment_id;
+                order.paymentId = paymentId;
 
                 order.paidAt = new Date();
                 // Reviving a cancelled order (see above) — it's live again, so drop the cancel.
@@ -505,6 +534,10 @@ export const confirmCheckoutSessionService = async (
                 await order.save({
                     session,
                 });
+
+                fulfilled = true;
+                fulfilledProductIds = order.items.map((item) => item.product);
+                fulfilledPromoCode = order.promoCode ?? "";
             }
         );
 
@@ -512,9 +545,14 @@ export const confirmCheckoutSessionService = async (
         await session.endSession();
     }
 
-    return {
-        _id: String(order._id),
-    };
+    // Only reached once the transaction committed. Stock and a promo use changed, so the product
+    // pages and the promo list must not keep showing the old numbers.
+    if (fulfilled) {
+        await invalidateProductDetails(fulfilledProductIds);
+        if (fulfilledPromoCode) await cache.bump("promos");
+    }
+
+    return { fulfilled };
 };
 
 /**
@@ -558,9 +596,11 @@ export const resumeCheckoutSessionService = async (
     // confirm only checks these AFTER the money is captured, so for an order that may be days old
     // they are verified here, before the gateway opens. Otherwise a customer could be charged for
     // something that can no longer be fulfilled.
+    // `variants`, not `stock`: stock moved onto the variant rows, and projecting the field that no
+    // longer exists left getVariantStock reading an empty list — every resume failed as "out of stock".
     const products = await ProductModel.find({
         _id: { $in: order.items.map((item) => item.product) },
-    }).select("title stock status");
+    }).select("title variants status");
 
     const productById = new Map(products.map((product) => [String(product._id), product]));
 
@@ -936,6 +976,10 @@ export const payWithPointsService = async (
     } finally {
         await session.endSession();
     }
+
+    // Only reached once the transaction committed; see confirmCheckoutSessionService.
+    await invalidateProductDetails(orderItems.map((item) => item.product));
+    if (appliedPromoCode) await cache.bump("promos");
 
     return {
         _id: String(orderId!),
