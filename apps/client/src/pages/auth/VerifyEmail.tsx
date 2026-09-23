@@ -21,7 +21,7 @@ export default function VerifyEmail() {
         mutationFn: verifyEmail,
         onSuccess: () => {
             setTimeout(() => {
-                navigate("/home", { replace: true });
+                navigate("/", { replace: true });
             }, 2000);
         },
     });

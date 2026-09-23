@@ -119,13 +119,48 @@ export type UploadImageColorsSchema = z.infer<typeof uploadImageColorsSchema>;
 export const productSortSchema = z.enum(["recent", "price-low", "price-high"]);
 export type ProductSort = z.infer<typeof productSortSchema>;
 
-export const productAppliedFilterListQuerySchema = z.object({
-    search: z.string().trim().optional(),
-    category: z.string().trim().optional(),
-    brand: z.string().trim().optional(),
-    color: z.string().trim().optional(),
-    size: z.string().trim().optional(),
-    subCategory: z.string().trim().optional(),
+/*
+  Page size for any listing. Capped so a caller can't ask for the whole collection in one request —
+  which is what the product list used to return, with three populates per row.
+ */
+export const paginationQuerySchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(24),
+});
+
+export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
+
+// What a paginated response carries in the envelope's `meta`, alongside the rows in `data`.
+export type PaginationMeta = {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+};
+
+/*
+  A Mongo ObjectId as it travels over the wire. Validated here rather than in the controller, so a
+  malformed id is one 400 from the schema instead of a hand-written check per field — and the client
+  gets the same rule. An empty string is "no filter", not a bad id: the UI drops a cleared facet by
+  sending it empty.
+ */
+const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+
+const optionalObjectId = (label: string) =>
+    z.preprocess(
+        (value) => (value === "" ? undefined : value),
+        z.string().regex(OBJECT_ID_PATTERN, { message: `Invalid ${label} ID` }).optional()
+    );
+
+export const productAppliedFilterListQuerySchema = paginationQuerySchema.extend({
+    // Capped: the term goes into an unindexed regex scan and into a cache key.
+    search: z.string().trim().max(100).optional(),
+    category: optionalObjectId("category"),
+    brand: optionalObjectId("brand"),
+    color: z.string().trim().max(50).optional(),
+    // One of the sizes the catalogue actually sells: a junk value is a 400, not an empty page.
+    size: z.preprocess((value) => (value === "" ? undefined : value), productSizeSchema.optional()),
+    subCategory: optionalObjectId("type"),
     sort: productSortSchema.default("recent"),
 });
 

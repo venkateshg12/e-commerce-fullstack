@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useGetProfile } from "@/hooks/auth/useGetProfile";
+import { clearUserQueries } from "@/lib/queryClient";
 import { useAuthStore } from "@/store/auth.store";
 
 interface AuthLoaderProps {
@@ -25,6 +26,8 @@ const AuthLoader: React.FC<AuthLoaderProps> = ({ children }) => {
       });
     } else if (isError) {
       clearAuth();
+      // No session resolved on this load — anything cached for a previous one goes with it.
+      clearUserQueries();
     }
   }, [isSuccess, isError, data, setUser, clearAuth]);
 

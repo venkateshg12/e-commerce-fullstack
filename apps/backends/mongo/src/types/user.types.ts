@@ -4,6 +4,8 @@ export interface AddressDocument extends mongoose.Document {
     fullName: string,
     address: string,
     state: string,
+    city : string,
+    country : string,
     postalCode: string,
     isDefault: boolean,
 }

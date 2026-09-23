@@ -11,7 +11,7 @@ import {
 
 export const wishlistRouter = Router();
 
-wishlistRouter.use(authenticate, protectedApiLimiter);
+wishlistRouter.use("/wishlist", authenticate, protectedApiLimiter);
 
 wishlistRouter.get("/wishlist", getWishlistHandler);
 wishlistRouter.post("/wishlist", addToWishlistHandler);

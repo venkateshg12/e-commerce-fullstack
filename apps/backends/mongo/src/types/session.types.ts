@@ -2,7 +2,10 @@ import mongoose from "mongoose"
 
 export interface SessionDocument extends mongoose.Document {
     userId : mongoose.Types.ObjectId,
-    userAgent? : String,
+    userAgent? : string,
     createdAt : Date,
-    expiresAt : Date 
+    expiresAt : Date,
+    refreshJti? : string,
+    prevRefreshJti? : string,
+    rotatedAt? : Date
 }

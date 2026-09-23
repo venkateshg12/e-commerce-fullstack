@@ -1,3 +1,5 @@
+import { formatDiscount } from "@/lib/price";
+import { getTotalStock, getVariantStock, isColorAvailable } from "@/lib/variants";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Check, Heart, ShoppingBag, Share2, Truck } from "lucide-react";
@@ -9,8 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomerProductCard from "@/components/user/collections/CustomerProductCard";
 import ProductGallery from "@/components/user/collections/ProductGallery";
-import { pluralize } from "@/constants/constant";
+import { COLOR_MAP, pluralize } from "@/constants/constant";
 import { useAddToCart } from "@/hooks/cart/useAddToCart";
+import { addGuestCartItem, getGuestWishlist, toggleGuestWishlistItem } from "@/lib/guestBag";
 import { useProductDetails } from "@/hooks/collections/useProductDetails";
 import { useGetWishlist } from "@/hooks/wishlist/useGetWishlist";
 import { useToggleWishlistItem } from "@/hooks/wishlist/useToggleWishlistItem";
@@ -37,7 +40,12 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
 
   const [selectedSize, setSelectedSize] = useState<ProductSize | "">("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  // null until the shopper picks a colour; the selection is then theirs, not the gallery's.
+  const [chosenColor, setChosenColor] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  // A guest's saved-for-later products live in this browser, so the heart reflects that store
+  // rather than the (auth-only) wishlist query.
+  const [guestWishlisted, setGuestWishlisted] = useState(() => (id ? getGuestWishlist().includes(id) : false));
 
   // Opening another product from a "See more" rail lands at the top of the new page, not the bottom.
   useEffect(() => {
@@ -88,18 +96,60 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
     : originalPrice;
 
   // Cover first, matching ProductGallery's own ordering, so an index means the same photo in the
-  // gallery and in the More Colors grid.
+  // gallery and in the colour selector.
   const orderedImages = [...(product.images ?? [])].sort(
     (a, b) => Number(b?.isCover) - Number(a?.isCover)
   );
-  const activeImage = orderedImages[activeImageIndex];
 
   // The product's colour palette — still shown as a count in Specs.
   const colors = (product.colors ?? []).filter(Boolean);
 
+  /*
+    One mapping, used in both directions: photo index → the colour it shows. Everything below
+    reads this, so a photo and its swatch can never disagree.
+
+    Normally the colour comes from the tag the admin set on the photo at upload. Products
+    uploaded before photos could be tagged have none, so as a fallback — and only when there are
+    exactly as many photos as colours, i.e. one photo per colour — they are paired by position.
+    Any other untagged shape is left unmapped rather than guessed at.
+   */
+  const isTagged = orderedImages.some((image) => Boolean(image.color));
+  const photoColors = orderedImages.map((image, index) =>
+    isTagged ? image.color : orderedImages.length === colors.length ? colors[index] : undefined
+  );
+
+  // Colour → the photo showing it, so picking a swatch can show that colour. -1 when the colour
+  // has no photo of its own, in which case the photo on screen stays put.
+  const photoIndexForColour = (color: string) => photoColors.indexOf(color);
+
+  // The cover is what every cart line carries, whichever photo the shopper happens to be viewing.
+  const coverImage = orderedImages.find((image) => image.isCover) ?? orderedImages[0];
+
+  /*
+    The photo on screen decides the highlighted colour: browsing the gallery rail moves the
+    highlight with it, and clicking a colour jumps the gallery to that colour's photo — so the two
+    always agree. `chosenColor` only carries the choice for photos with no colour of their own,
+    where the gallery can't say what is showing.
+   */
+  const selectedColor = photoColors[activeImageIndex] ?? chosenColor ?? colors[0] ?? undefined;
+
   const sizes = (product.sizes ?? []).filter(Boolean);
-  const inStock = Number(product.stock) > 0;
-  const isLowStock = inStock && Number(product.stock) <= 5;
+  const variants = product.variants ?? [];
+
+  /*
+    Availability is read per (colour, size), never per product: the selected pair decides whether
+    Add to cart works, while the product-wide total only answers "is anything left at all".
+    A colour with no size in stock is shown as sold out but stays selectable — it still sells the
+    product, it just can't be bought today.
+   */
+  const selectedColorSoldOut = colors.length > 0 && !isColorAvailable(variants, selectedColor);
+  const selectedStock = getVariantStock(variants, selectedColor, selectedSize || undefined);
+  // With no size chosen yet, the question is whether this colour has any size left.
+  const canBuySelection = sizes.length && !selectedSize
+    ? isColorAvailable(variants, selectedColor)
+    : selectedStock > 0;
+  const isLowStock = selectedStock > 0 && selectedStock <= 5;
+  const anyStock = getTotalStock(variants) > 0;
   const categoryHref = `/collections?category=${product.category?._id ?? ""}`;
   // Same type → same category → same brand. Empty sections are dropped.
   const relatedSections = [
@@ -123,13 +173,26 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
     },
   ].filter((section) => section.products.length);
 
-  const isWishlisted =
-    wishlist?.data.items.some((item) => item.productId === product._id) ?? false;
+  const isWishlisted = user
+    ? (wishlist?.data.items.some((item) => item.productId === product._id) ?? false)
+    : guestWishlisted;
 
   const handleToggleWishlist = () => {
-    // Same gate and redirect pattern as add-to-cart — wishlist is auth-only on the backend too.
+    /*
+      Wishlist is auth-only on the backend, but a guest's choice is kept in this browser and merged
+      into their account when they sign in (lib/guestBag.ts) — better than sending them to login and
+      losing what they picked.
+     */
     if (!user) {
-      navigate("/login", { state: { from: location } });
+      const saved = toggleGuestWishlistItem(product._id);
+      setGuestWishlisted(saved);
+      setFeedback({
+        type: "success",
+        title: saved ? "Saved for later" : "Removed from wishlist",
+        description: saved
+          ? `${product.title} is saved on this device. Sign in and it moves to your wishlist.`
+          : `${product.title} was removed.`,
+      });
       return;
     }
 
@@ -159,12 +222,6 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
   };
 
   const handleAddToCart = (thenGoToCart: boolean) => {
-    // Cart lives behind auth on the backend, so send guests to login and bring them back.
-    if (!user) {
-      navigate("/login", { state: { from: location } });
-      return;
-    }
-
     if (sizes.length && !selectedSize) {
       setFeedback({
         type: "error",
@@ -174,15 +231,43 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
       return;
     }
 
+    /*
+      The cart lives behind auth on the backend, so a guest's line is kept in this browser and
+      merged into their real cart at sign-in. Checking out still needs an account, so "Buy now"
+      goes to login — but with the item already saved, so nothing is lost on the way.
+     */
+    if (!user) {
+      addGuestCartItem({
+        productId: product._id,
+        quantity: 1,
+        color: selectedColor,
+        size: (selectedSize || undefined) as ProductSize | undefined,
+        image: coverImage?.url,
+      });
+
+      if (thenGoToCart) {
+        navigate("/login", { state: { from: location } });
+        return;
+      }
+
+      setFeedback({
+        type: "success",
+        title: "Saved to your cart",
+        description: `${product.title} is saved on this device. Sign in to check out — we'll keep it for you.`,
+      });
+      return;
+    }
+
     addToCartMutation.mutate(
       {
         productId: product._id,
         quantity: 1,
-        // Untagged photos give undefined, and the backend falls back to the product's first colour.
-        color: activeImage?.color || undefined,
+        // The colour the shopper chose — not the tag on whichever photo happens to be showing.
+        color: selectedColor,
         size: (selectedSize || undefined) as ProductSize | undefined,
-        // Whichever photo is showing right now — from the rail or More Colors — is this line's image.
-        image: activeImage?.url,
+        // Always the cover, never the photo being browsed: the cart line is identified by its
+        // colour and size, and the picture is just the product's.
+        image: coverImage?.url,
       },
       {
         onSuccess: () => {
@@ -277,28 +362,78 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
                     <span className="pdp-price-original">
                       Rs.{originalPrice.toFixed(2)}
                     </span>
-                    <Badge className="pdp-sale-badge">{salePercentage}% OFF</Badge>
+                    <Badge className="pdp-sale-badge">{formatDiscount(salePercentage)}% OFF</Badge>
                   </>
                 ) : null}
               </div>
 
-              {orderedImages.length > 1 ? (
-                <div className="pdp-option-group">
-                  <p className="pdp-option-label">More Colors</p>
+              {selectedColorSoldOut ? (
+                <Badge variant="outline" className="pdp-sold-out-badge">
+                  Sold out in {selectedColor}
+                </Badge>
+              ) : null}
 
-                  {/* Shares activeImageIndex with the gallery rail: a click swaps only the main
-                      image — no filtering, no re-ordering, no navigation. */}
+              {colors.length > 0 || orderedImages.length > 1 ? (
+                <div className="pdp-option-group">
+                  <p className="pdp-option-label">Colour</p>
+
+                  {/* Every colour the product comes in; the one on screen is ringed. */}
+                  <div className="pdp-colour-row">
+                    {colors.map((color) => {
+                      const soldOut = !isColorAvailable(variants, color);
+
+                      return (
+                      <button
+                        key={color}
+                        type="button"
+                        title={soldOut ? `${color} — sold out` : color}
+                        aria-label={soldOut ? `Colour ${color}, sold out` : `Colour ${color}`}
+                        aria-pressed={color === selectedColor}
+                        onClick={() => {
+                          setChosenColor(color);
+                          // A colour with no photo of its own leaves the gallery where it is.
+                          const index = photoIndexForColour(color);
+                          if (index !== -1) setActiveImageIndex(index);
+                        }}
+                        className={cn(
+                          "pdp-colour-dot",
+                          color === selectedColor && "pdp-colour-dot-active",
+                          // Paled, not hidden: a sold-out colour still shows what the product
+                          // comes in, it just can't be bought today.
+                          soldOut && "pdp-colour-dot-sold-out"
+                        )}
+                        style={{ backgroundColor: COLOR_MAP[color.toLowerCase()] || color }}
+                      />
+                      );
+                    })}
+                  </div>
+
+                  {/* Every photo. Picking one swaps the main image and, when that photo carries
+                      a colour, moves the ring in the colour row above. */}
                   <div className="pdp-more-colors">
                     {orderedImages.map((image, index) => (
                       <button
                         key={image.publicId || image.url}
                         type="button"
-                        aria-label={`Show colour ${index + 1}`}
+                        aria-label={
+                          photoColors[index]
+                            ? `Photo ${index + 1}, colour ${photoColors[index]}`
+                            : `Photo ${index + 1}`
+                        }
                         aria-pressed={index === activeImageIndex}
-                        onClick={() => setActiveImageIndex(index)}
+                        onClick={() => {
+                          setActiveImageIndex(index);
+                          // Picking a photo is also picking its colour — the swatch above moves
+                          // with it, and that is the colour the cart line gets.
+                          const color = photoColors[index];
+                          if (color) setChosenColor(color);
+                        }}
                         className={cn(
                           "pdp-more-colors-tile",
-                          index === activeImageIndex && "pdp-more-colors-tile-active"
+                          index === activeImageIndex && "pdp-more-colors-tile-active",
+                          photoColors[index] && !isColorAvailable(variants, photoColors[index])
+                            ? "pdp-more-colors-tile-sold-out"
+                            : null
                         )}
                       >
                         <img
@@ -307,6 +442,16 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
                           loading="lazy"
                           className="pdp-more-colors-image"
                         />
+                        {/* Only mapped photos get a dot, so it's clear which still need one. */}
+                        {photoColors[index] ? (
+                          <span
+                            className="pdp-more-colors-dot"
+                            style={{
+                              backgroundColor:
+                                COLOR_MAP[photoColors[index]!.toLowerCase()] || photoColors[index],
+                            }}
+                          />
+                        ) : null}
                       </button>
                     ))}
                   </div>
@@ -320,36 +465,53 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
                   <p className="pdp-option-label">Size</p>
 
                   <div className="pdp-sizes">
-                    {sizes.map((size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        aria-pressed={selectedSize === size}
-                        onClick={() =>
-                          setSelectedSize(selectedSize === size ? "" : size)
-                        }
-                        className={cn(
-                          "pdp-size",
-                          selectedSize === size && "pdp-size-active"
-                        )}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {sizes.map((size) => {
+                      // This size in the colour on screen — a size can be gone in green and
+                      // waiting in red.
+                      const soldOut = getVariantStock(variants, selectedColor, size) <= 0;
+
+                      return (
+                        <button
+                          key={size}
+                          type="button"
+                          disabled={soldOut}
+                          title={soldOut ? `${size} is sold out in this colour` : undefined}
+                          aria-pressed={selectedSize === size}
+                          onClick={() =>
+                            setSelectedSize(selectedSize === size ? "" : size)
+                          }
+                          className={cn(
+                            "pdp-size",
+                            selectedSize === size && "pdp-size-active",
+                            soldOut && "pdp-size-sold-out"
+                          )}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
 
               <div className="pdp-stock-row">
-                {inStock ? (
+                {!anyStock ? (
+                  <span className="pdp-stock-out">Out of stock</span>
+                ) : selectedColorSoldOut ? (
+                  <span className="pdp-stock-out">
+                    {selectedColor} is sold out — try another colour
+                  </span>
+                ) : canBuySelection ? (
                   <span className="pdp-stock-in">
                     <Check className="pdp-stock-icon" />
-                    {isLowStock
-                      ? `Only ${product.stock} left in stock`
-                      : "In stock"}
+                    {isLowStock ? `Only ${selectedStock} left` : "In stock"}
                   </span>
                 ) : (
-                  <span className="pdp-stock-out">Out of stock</span>
+                  <span className="pdp-stock-out">
+                    {selectedSize
+                      ? `Size ${selectedSize} is sold out in this colour`
+                      : "This combination is sold out"}
+                  </span>
                 )}
               </div>
 
@@ -357,7 +519,7 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
                 <Button
                   variant="outline"
                   className="pdp-action-secondary"
-                  disabled={!inStock || addToCartMutation.isPending}
+                  disabled={!canBuySelection || addToCartMutation.isPending}
                   onClick={() => handleAddToCart(false)}
                 >
                   <ShoppingBag data-icon="inline-start" />
@@ -366,7 +528,7 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
 
                 <Button
                   className="pdp-action-primary"
-                  disabled={!inStock || addToCartMutation.isPending}
+                  disabled={!canBuySelection || addToCartMutation.isPending}
                   onClick={() => handleAddToCart(true)}
                 >
                   Buy Now

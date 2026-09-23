@@ -4,6 +4,7 @@ import type {
     CustomerProductDetailsResponse,
     GetCustomerProductsParams,
     ProductCategory,
+    PaginatedResponse,
     ProductFacets,
     SuccessResponse,
 } from "@/types";
@@ -13,10 +14,11 @@ export const getCustomerCategories = async (): Promise<SuccessResponse<ProductCa
     return response.data;
 };
 
+// One page of products. `meta` carries page/total/hasMore; `data` stays the array of rows.
 export const getCustomerProducts = async (
     params?: GetCustomerProductsParams
-): Promise<SuccessResponse<CustomerProduct[]>> => {
-    const response = await API.get<SuccessResponse<CustomerProduct[]>>("/products", {
+): Promise<PaginatedResponse<CustomerProduct[]>> => {
+    const response = await API.get<PaginatedResponse<CustomerProduct[]>>("/products", {
         params,
     });
     return response.data;

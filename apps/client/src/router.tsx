@@ -1,10 +1,9 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import UserLayout from "./components/layout/UserLayout";
-import LandingPage from "./pages/LandingPage";
+import Home from "./pages/Home";
 import PublicRoute from "./components/auth/PublicRoute";
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import ResetPassword from "./pages/auth/ResetPassword";
-import HomePage from "./pages/user/HomePage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RoleGuardLayout from "./components/layout/RoleGuardLayout";
 import AdminLayout from "./components/layout/AdminLayout";
@@ -12,11 +11,16 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminPromo from "./pages/admin/AdminPromo";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminBanners from "./pages/admin/AdminBanners";
 import AdminSettings from "./pages/admin/AdminSettings";
 import Collections from "./pages/Collections";
 import ProductDetails from "./pages/ProductDetails";
 import Account from "./pages/Account";
-import CollectionDetails from "./pages/CollectionDetails";
+import Wishlist from "./pages/Wishlist";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
+import Orders from "./pages/Orders";
 
 
 export const router = createBrowserRouter([
@@ -26,9 +30,15 @@ export const router = createBrowserRouter([
         element: <UserLayout />,
         children: [
             // 1. Shared Routes (Accessible to everyone, logged in or not — no guard)
+            // One home page for guests and signed-in customers alike.
             {
                 index: true,
-                element: <LandingPage />
+                element: <Home />
+            },
+            // The old customer landing route — kept so existing links and bookmarks still land.
+            {
+                path: "home",
+                element: <Navigate to="/" replace />
             },
             {
                 path: "collections",
@@ -38,26 +48,23 @@ export const router = createBrowserRouter([
                 path: "collections/:id",
                 element: <ProductDetails />
             },
-            {
-                path: "collections/:id",
-                element: <CollectionDetails />
-            },
 
-            // 2. Guest-Only Routes (Redirects to /home if user IS logged in)
+            // 2. Guest-Only Routes (Redirects to / if user IS logged in). The auth forms open as modals
+            //    over the home page.
             {
                 element: <PublicRoute />,
                 children: [
                     {
                         path: "login",
-                        element: <LandingPage showAuth="login" />,
+                        element: <Home showAuth="login" />,
                     },
                     {
                         path: "register",
-                        element: <LandingPage showAuth="register" />,
+                        element: <Home showAuth="register" />,
                     },
                     {
                         path: "password/forgot",
-                        element: <LandingPage showAuth="forgot" />,
+                        element: <Home showAuth="forgot" />,
                     },
                     {
                         path: "auth/verify/:token",
@@ -79,9 +86,25 @@ export const router = createBrowserRouter([
                         element: <Account />,
                     },
                     {
-                        path: "home",
-                        element: <HomePage />
-                    }
+                        path: "wishlist",
+                        element: <Wishlist />,
+                    },
+                    {
+                        path: "cart",
+                        element: <Cart />,
+                    },
+                    {
+                        path: "checkout",
+                        element: <Checkout />,
+                    },
+                    {
+                        path: "order-success",
+                        element: <OrderSuccess />,
+                    },
+                    {
+                        path: "orders",
+                        element: <Orders />,
+                    },
 
                 ],
             },
@@ -114,6 +137,10 @@ export const router = createBrowserRouter([
                             {
                                 path: 'orders',
                                 element: <AdminOrders />
+                            },
+                            {
+                                path: 'banners',
+                                element: <AdminBanners />
                             },
                             {
                                 path: 'settings',
