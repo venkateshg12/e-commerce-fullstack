@@ -2,12 +2,24 @@ import API from "@/lib/api";
 import type {
     AddToCartSchema,
     DeleteCartItemSchema,
+    SyncCartSchema,
     UpdateCartItemSchema,
 } from "@repo/types";
 import type { CartResponse, SuccessResponse } from "@/types";
 
 export const getCart = async (): Promise<SuccessResponse<CartResponse>> => {
     const response = await API.get<SuccessResponse<CartResponse>>("/cart");
+    return response.data;
+};
+
+/*
+  Merges a guest's locally-kept cart into the signed-in account's cart. The server skips lines whose
+  product is gone or whose colour/size sold out, so a stale guest bag can't fail the merge.
+ */
+export const syncCart = async (
+    payload: SyncCartSchema
+): Promise<SuccessResponse<CartResponse>> => {
+    const response = await API.post<SuccessResponse<CartResponse>>("/cart/sync", payload);
     return response.data;
 };
 
