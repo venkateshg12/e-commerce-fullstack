@@ -207,7 +207,8 @@ async function main() {
     app.use(notFound);
     app.use(errorHandler);
 
-    const server = app.listen(PORT,() => {
+    const BACKEND_PORT = Number(PORT) || 5000;
+    const server = app.listen(BACKEND_PORT,"0.0.0.0",() => {
         console.log(`Server is listening to the port: ${PORT}`);
         if (queueDashboardEnabled) {
             console.log(`BullMQ Dashboard available at: http://localhost:${PORT}/admin/queues`);
