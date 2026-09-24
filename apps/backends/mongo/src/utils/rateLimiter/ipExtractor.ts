@@ -12,13 +12,17 @@ export const UNKNOWN_IP = "unknown";
 
 /*
   Headers provided by trusted edge infrastructure.
- 
+
  These headers are ONLY trusted when the actual TCP peer belongs
   to TRUSTED_PROXY_CIDRS.
+
+  Only headers the edge always overwrites qualify. Cloudflare replaces any client-sent
+  CF-Connecting-IP, but sets True-Client-IP only on Enterprise zones with the Managed
+  Transform enabled — elsewhere (e.g. Render's zone) a client's True-Client-IP passes
+  straight through, so trusting it would let any client pick its own rate-limit bucket.
  */
 const EDGE_HEADERS = [
     "cf-connecting-ip",
-    "true-client-ip",
 ] as const;
 
 /*
@@ -31,7 +35,7 @@ export const trustProxy = createTrustProxy(TRUSTED_PROXY_CIDRS);
  
   Security model:
   1. Determine the actual TCP peer.
-  2. Only trust Cloudflare/Akamai identity headers when that peer
+  2. Only trust Cloudflare's CF-Connecting-IP when that peer
      belongs to infrastructure we explicitly trust.
   3. Otherwise resolve the client IP using proxy-addr and our
      trusted-proxy configuration.

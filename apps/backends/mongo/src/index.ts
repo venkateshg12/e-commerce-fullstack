@@ -23,7 +23,7 @@ import { authRoutes } from "./routes/auth.route";
 import cookieParser from "cookie-parser";
 import { visitorIdMiddleware } from "./middleware/visitorId";
 import { globalLimiter } from "./config/rateLimiter";
-import { trustProxy } from "./utils/rateLimiter/ipExtractor";
+import { extractClientIp, trustProxy } from "./utils/rateLimiter/ipExtractor";
 import { cache } from "./utils/cache";
 import sessionRoutes from "./routes/session.route";
 import productRoutes from "./routes/product.route";
@@ -162,6 +162,28 @@ async function main() {
     app.use(cookieParser());
     app.use(visitorIdMiddleware);
     app.use(globalLimiter);
+
+    /*
+      TEMPORARY — shows what the proxy chain delivers so TRUSTED_PROXY_CIDRS can be set from
+      observation. Off unless DEBUG_IP_ENDPOINT=true; remove this block once the value is confirmed.
+      Mounted after globalLimiter so its X-RateLimit-IP-Remaining header shows which bucket a
+      request was charged to.
+     */
+    if (process.env.DEBUG_IP_ENDPOINT === "true") {
+        app.get("/debug/ip", (req, res) => {
+            res.setHeader("Cache-Control", "no-store");
+            res.json(
+                ok({
+                    socketIp: req.socket.remoteAddress ?? null,
+                    xForwardedFor: req.headers["x-forwarded-for"] ?? null,
+                    cfConnectingIp: req.headers["cf-connecting-ip"] ?? null,
+                    trueClientIp: req.headers["true-client-ip"] ?? null,
+                    reqIp: req.ip ?? null,
+                    extractedIp: extractClientIp(req),
+                })
+            );
+        });
+    }
 
 
     /*
