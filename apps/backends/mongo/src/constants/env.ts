@@ -57,11 +57,16 @@ export const QUEUE_DASHBOARD_USER = getEnv("QUEUE_DASHBOARD_USER", "");
 export const QUEUE_DASHBOARD_PASSWORD = getEnv("QUEUE_DASHBOARD_PASSWORD", "");
 export const REDIS_HOST = getEnv("REDIS_HOST");
 export const REDIS_PORT = getEnv("REDIS_PORT");
+// Empty for a local passwordless Redis; set both for a hosted one (e.g. Redis Cloud).
+export const REDIS_USERNAME = getEnv("REDIS_USERNAME", "");
+export const REDIS_PASSWORD = getEnv("REDIS_PASSWORD", "");
 
 // The response cache runs on its own Redis (see docker-compose.yml): it must be allowed to evict,
 // which the queue/rate-limit instance must not.
 export const CACHE_REDIS_HOST = getEnv("CACHE_REDIS_HOST", REDIS_HOST);
 export const CACHE_REDIS_PORT = getEnv("CACHE_REDIS_PORT", "6380");
+export const CACHE_REDIS_USERNAME = getEnv("CACHE_REDIS_USERNAME", REDIS_USERNAME);
+export const CACHE_REDIS_PASSWORD = getEnv("CACHE_REDIS_PASSWORD", REDIS_PASSWORD);
 // Emergency off-switch: "false" makes every cache read a miss and every write a no-op.
 export const CACHE_ENABLED = getEnv("CACHE_ENABLED", "true");
 export const RESEND_API_KEY = getEnv("RESEND_API_KEY");

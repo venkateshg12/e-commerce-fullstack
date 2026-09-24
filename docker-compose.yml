@@ -36,23 +36,23 @@ services:
   # Local Postgres for apps/backends/postgres. Currently unused — that service's DATABASE_URL
   # points at Neon instead — kept here for whoever wants to run migrations/tests against a local
   # database rather than the shared Neon one.
-  postgres:
-    image: postgres:16
-    container_name: ecommerce-postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: shopymart
-      POSTGRES_PASSWORD: shopymart
-      POSTGRES_DB: shopymart
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U shopymart -d shopymart"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+  #postgres:
+   # image: postgres:16
+    #container_name: ecommerce-postgres
+    #ports:
+     # - "5432:5432"
+    #environment:
+     # POSTGRES_USER: shopymart
+      #POSTGRES_PASSWORD: shopymart
+      #POSTGRES_DB: shopymart
+   # volumes:
+    #  - postgres_data:/var/lib/postgresql/data
+    #healthcheck:
+     # test: ["CMD-SHELL", "pg_isready -U shopymart -d shopymart"]
+      #interval: 5s
+      #timeout: 3s
+      #retries: 5
 
 volumes:
   redis_data:
-  postgres_data:
+  #postgres_data:

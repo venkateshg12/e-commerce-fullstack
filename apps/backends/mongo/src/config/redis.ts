@@ -1,10 +1,12 @@
 import { RedisOptions } from "ioredis";
-import { CACHE_REDIS_HOST, CACHE_REDIS_PORT, REDIS_HOST, REDIS_PORT } from "../constants/env";
+import { CACHE_REDIS_HOST, CACHE_REDIS_PASSWORD, CACHE_REDIS_PORT, CACHE_REDIS_USERNAME, REDIS_HOST, REDIS_PASSWORD, REDIS_PORT, REDIS_USERNAME } from "../constants/env";
 
 
 export const getRedisConfig = (): RedisOptions => ({
     host: REDIS_HOST,
     port: Number(REDIS_PORT),
+    username: REDIS_USERNAME || undefined,
+    password: REDIS_PASSWORD || undefined,
     maxRetriesPerRequest: null,
     enableReadyCheck: false
 });
@@ -12,6 +14,8 @@ export const getRedisConfig = (): RedisOptions => ({
 export const getRateLimiterRedisConfig = (): RedisOptions => ({
     host: REDIS_HOST,
     port: Number(REDIS_PORT),
+    username: REDIS_USERNAME || undefined,
+    password: REDIS_PASSWORD || undefined,
     maxRetriesPerRequest: 1, // Fail fast so circuit breaker trips to memory store
     connectTimeout: 2000, // m ax time to wait for a Redis connection
     commandTimeout: 1000, // max time to wait for a Redis command response (1 second)
@@ -26,6 +30,8 @@ export const getRateLimiterRedisConfig = (): RedisOptions => ({
 export const getCacheRedisConfig = (): RedisOptions => ({
     host: CACHE_REDIS_HOST,
     port: Number(CACHE_REDIS_PORT),
+    username: CACHE_REDIS_USERNAME || undefined,
+    password: CACHE_REDIS_PASSWORD || undefined,
     maxRetriesPerRequest: 1,
     connectTimeout: 2000,
     commandTimeout: 300,
