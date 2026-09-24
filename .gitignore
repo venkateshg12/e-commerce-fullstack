@@ -63,7 +63,13 @@ storybook-static/
 *.db
 *.sqlite
 
-# AI / Agent configuration
+# Environment files
+.env*
+!.env.example
+
+
+# Claude / AI agent files
 /.agents/
 /.skills/
-CLAUDE.md
+/.claude/
+/CLAUDE.md
