@@ -31,6 +31,10 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      // Same source the Vite alias uses, so typechecking doesn't depend on a built (gitignored) dist/.
+      "@repo/types": [
+        "../../packages/types/src/index.ts"
       ]
     }
   },

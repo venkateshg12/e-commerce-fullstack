@@ -14,6 +14,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path .resolve(__dirname, "./src"),
+      // The package's `main` is its CommonJS build, for the Node backend. The browser can't read
+      // named exports from CommonJS, so the client compiles the TypeScript source instead.
+      "@repo/types": path.resolve(__dirname, "../../packages/types/src/index.ts"),
     },
   },
 });

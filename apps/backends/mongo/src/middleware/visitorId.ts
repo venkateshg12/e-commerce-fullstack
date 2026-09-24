@@ -7,7 +7,7 @@ import crypto from "crypto";
  * Flow:
  * 1. Checks if `req.cookies.visitorId` exists and is valid.
  * 2. If missing or malformed, generates an opaque UUID v4.
- * 3. Issues an HttpOnly, SameSite=Lax cookie with path "/" and 1-year expiration.
+ * 3. Issues an HttpOnly cookie (SameSite=None; Secure in production, Lax locally), path "/", 1-year expiry.
  * 4. Attaches `req.visitorId` for consumption by subsequent rate limiters.
  * 
  * Note: `visitorId` is a fairness identity for unauthenticated browser sessions,
@@ -22,7 +22,9 @@ export const visitorIdMiddleware: RequestHandler = (req, res, next) => {
         res.cookie("visitorId", visitorId, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
+            // The storefront (Vercel) and API (Render) are different sites, so a Lax cookie is never
+            // stored and every request looked like a new visitor. None requires Secure, hence the pairing.
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             path: "/",
             maxAge: 365 * 24 * 60 * 60 * 1000
         });

@@ -7,7 +7,9 @@ const secure = NODE_ENV !== "development";
 export const REFRESH_PATH = "/auth/refresh";
 
 const defaults: CookieOptions = {
-    sameSite: "none",
+    // "none" lets the Vercel storefront send these to the Render API (different sites), but browsers
+    // drop SameSite=None cookies that aren't Secure. Locally both ports are one site, so "lax" works.
+    sameSite: secure ? "none" : "lax",
     httpOnly: true,
     secure
 };
@@ -27,4 +29,4 @@ export const setAuthCookies = ({ res, accessToken, refreshToken }: CookieParams)
     res.cookie("accessToken", accessToken, getAccessTokenCookieOptions()).cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions());
 
 export const clearAuthCookies = (res: Response) =>
-    res.clearCookie("accessToken").clearCookie("refreshToken", { ...defaults, path: REFRESH_PATH });
+    res.clearCookie("accessToken", defaults).clearCookie("refreshToken", { ...defaults, path: REFRESH_PATH });
