@@ -63,3 +63,10 @@ storybook-static/
 # Environment files
 .env*
 !.env.example
+
+
+# Claude / AI agent files
+/.agents/
+/.skills/
+/.claude/
+/CLAUDE.md
