@@ -18,8 +18,9 @@ export const UNKNOWN_IP = "unknown";
 
   Only headers the edge always overwrites qualify. Cloudflare replaces any client-sent
   CF-Connecting-IP, but sets True-Client-IP only on Enterprise zones with the Managed
-  Transform enabled — elsewhere (e.g. Render's zone) a client's True-Client-IP passes
-  straight through, so trusting it would let any client pick its own rate-limit bucket.
+  Transform enabled — elsewhere a client's True-Client-IP passes straight through. Render's
+  zone does set it today, but that is undocumented, and CF-Connecting-IP already carries the
+  same value, so trusting True-Client-IP would add risk and nothing else.
  */
 const EDGE_HEADERS = [
     "cf-connecting-ip",
