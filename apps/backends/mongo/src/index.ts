@@ -209,9 +209,9 @@ async function main() {
 
     const BACKEND_PORT = Number(PORT) || 5000;
     const server = app.listen(BACKEND_PORT,"0.0.0.0",() => {
-        console.log(`Server is listening to the port: ${PORT}`);
+        console.log(`Server is listening to the port: ${BACKEND_PORT}`);
         if (queueDashboardEnabled) {
-            console.log(`BullMQ Dashboard available at: http://localhost:${PORT}/admin/queues`);
+            console.log(`BullMQ Dashboard available at: http://localhost:${BACKEND_PORT}/admin/queues`);
         }
     });
 
