@@ -1,201 +1,154 @@
-# 🛍️ Full-Stack E-Commerce Monorepo
+# E-Commerce (Full Stack)
 
-Welcome to the **E-Commerce Monorepo**, an industry-grade, highly performant full-stack e-commerce platform. This project is structured as a **pnpm + Turborepo** workspace, designed for optimal development speed, pipeline caching, code sharing, and clean architecture boundaries.
+A clothing store I'm building from scratch to learn how a real online shop works end to end:
+accounts, a product catalog, a cart, checkout with real payments, and an admin side to run it.
 
----
+It's a TypeScript monorepo with a React frontend and an Express + MongoDB backend. Some parts are
+finished and some are still being wired together. The [status](#status) section says which is which.
 
-## 🏗️ Repository Architecture
+## Tech stack
 
-This repository uses **pnpm workspaces** and **Turborepo** to orchestrate three core applications and several shared packages:
+- **Frontend:** React 19, Vite, TypeScript, Tailwind CSS v4, shadcn/ui, TanStack Query, Zustand, React Router
+- **Backend:** Node.js, Express 5, MongoDB with Mongoose, Redis, BullMQ
+- **Shared:** Zod schemas in a workspace package, used by both the frontend and the backend
+- **Payments:** Razorpay
+- **Tooling:** pnpm workspaces, Turborepo, Docker (for Redis)
 
-```mermaid
-graph TD
-    %% Applications
-    subgraph Apps [Applications]
-        Client["💻 apps/client (React Storefront)"]
-        Admin["📊 apps/admin (React Dashboard)"]
-        AuthService["⚙️ apps/auth-service (Authentication Service)"]
-    end
+## Status
 
-    %% Packages
-    subgraph Packages [Shared Workspace Packages]
-        UI["📦 packages/ui (React Component Library)"]
-        TSConfig["🔧 packages/typescript-config"]
-        ESLintConfig["🧹 packages/eslint-config"]
-    end
+| Area | Where it's at |
+|---|---|
+| Sign up, login, logout, email verification, password reset, Google sign-in | Working, frontend and backend |
+| Sessions (list and revoke logged-in devices) | Working |
+| Rate limiting on auth routes | Working |
+| Admin: create, edit and delete promo codes | Frontend done; backend routes written |
+| Orders, promos, addresses | Backend routes and services written, not yet mounted in the server |
+| Cart, wishlist, checkout, Razorpay payments, paying with points | Backend services written, routes in progress |
+| Product catalog, product image processing | Backend models and jobs written; storefront pages still to build |
 
-    %% Dependencies
-    Client --> UI
-    Client --> TSConfig
-    Client --> ESLintConfig
+## What's interesting about it
 
-    Admin --> UI
-    Admin --> TSConfig
-    Admin --> ESLintConfig
+These are the parts that took the most thinking.
 
-    AuthService --> TSConfig
-    AuthService --> ESLintConfig
+### Authentication that behaves like a real app
+- Short-lived access tokens (15 min) and long-lived refresh tokens (30 days), both in **httpOnly
+  cookies**, so JavaScript on the page can't read them.
+- The refresh cookie is only sent to `/auth/refresh`, not with every request.
+- Every login creates a **session** in MongoDB. Logging out deletes it. You can see your active
+  sessions and revoke one, which logs that device out.
+- Email verification and password-reset links are single-use and expire.
+- Google sign-in verifies the Google ID token on the server before creating or linking the account.
 
-    classDef apps fill:#4F46E5,stroke:#312E81,color:#FFF;
-    classDef pkgs fill:#10B981,stroke:#065F46,color:#FFF;
-    class Client,Admin,AuthService apps;
-    class UI,TSConfig,ESLintConfig pkgs;
+### Rate limiting with Redis
+Login, register, verification and password-reset routes are rate limited per IP. On login and
+password reset, the limit applies per IP **and** per email, so one person can't lock another out
+by guessing their email. The limiter is my own Express middleware backed by Redis, using a sliding
+window rather than fixed per-minute buckets.
+
+![Rate limiting flow](architecture_images/rate_limiting.png)
+
+### Slow work goes to background jobs
+Sending emails and processing product images don't happen inside the request. The API puts a job
+on a **BullMQ** queue in Redis, and a separate worker process picks it up, with retries and
+backoff if something fails. That keeps the API fast, and a flaky email provider can't break signup.
+In development, there's a dashboard at `/admin/queues` to watch the jobs.
+
+### Checkout that can't oversell
+Payments go through Razorpay. When a payment is confirmed:
+1. The server checks Razorpay's signature using a constant-time comparison (`crypto.timingSafeEqual`).
+2. Inside a **MongoDB transaction**, it decrements stock with a condition: only if enough stock is
+   left. If two people buy the last item at the same moment, one order goes through and the other
+   is rejected. The whole order rolls back instead of leaving the stock negative.
+
+Users can also pay with loyalty points, which goes through the same checks.
+
+### One set of validation rules
+Request shapes (register, login, cart, checkout, promos…) are written once as **Zod** schemas in
+`packages/types`. The backend validates requests with them, and the frontend uses the same schemas
+in its forms and types, so the two can't drift apart.
+
+### A consistent API and error handling
+- Every response has the same shape: `{ status, data, meta?, errors? }`.
+- The backend is layered: **route → controller → service → model**. Controllers only validate
+  input and call one service. Services hold the business logic.
+- Errors are thrown with a small `appAssert` helper and handled in one central error handler. So
+  a bad request always gets a clean 400 with field errors, never a stack trace.
+
+### Frontend data flow
+- One axios instance that sends cookies and turns every error into the same simple shape.
+- One TanStack Query hook per API call (`useLogin`, `useCreatePromo`, …), and each hook handles
+  its own side effects: updating the cache, showing a toast, navigating.
+- Zustand only holds client state, like the logged-in user.
+- Routes are protected with wrapper components: guests are sent to login, and only admins can
+  open `/admin`.
+
+## Project structure
+
 ```
-
----
-
-## 🛠️ Tech Stack & Workspace Overview
-
-### Applications (`apps/`)
-
-- **`apps/client`**: The public-facing e-commerce storefront.
-  - **Tech**: [React 19](https://react.dev/), [Vite](https://vite.dev/), [Tailwind CSS v4](https://tailwindcss.com/) (with Babel & React Compiler), TypeScript.
-  - **Features**: Product listings, shopping cart, user checkout, search filters, order history.
-- **`apps/admin`**: The internal back-office management panel.
-  - **Tech**: React 19, Vite, Tailwind CSS v4, TypeScript.
-  - **Features**: Inventory management, product editing, order fulfillment tracking, customer analysis dashboard.
-- **`apps/auth-service`**: The authentication and session backend service (moved from `apps/backends/mongo`).
-  - **Tech**: Node.js, Express, MongoDB (Mongoose), TypeScript.
-  - **Features**: RESTful Auth APIs, session storage, email verification, password reset, and auth middleware.
-
-### Shared Packages (`packages/`)
-
-- **`@repo/ui`**: A shared React component library (e.g., buttons, inputs, modal dialogs) used consistently across both the `client` and `admin` portals to preserve UI/UX design tokens.
-- **`@repo/typescript-config`**: Shared base TypeScript configurations (`tsconfig.json`) to enforce strict type checking across all workspace directories.
-- **`@repo/eslint-config`**: Shared ESLint standard configurations to ensure strict code style, formatting, and linting guidelines.
-
----
-
-## 🚀 Getting Started
-
-Follow these steps to set up and run the project locally.
-
-### Prerequisites
-
-- **Node.js**: `v18` or higher (configured in `package.json` engines).
-- **pnpm**: `v9` or higher.
-
-### 1. Clone & Install Dependencies
-
-```bash
-# Clone the repository
-git clone https://github.com/your-username/e-commerce.git
-cd e-commerce
-
-# Install dependencies for all apps and packages
-pnpm install
-```
-
-### 2. Set Up Environment Variables
-
-Each application contains a `.env.example` file. Copy this file to `.env` in the respective directories and customize the configuration.
-
-```bash
-# Example for apps/auth-service
-cp apps/auth-service/.env.example apps/auth-service/.env
-
-# Example for apps/client
-cp apps/client/.env.example apps/client/.env
-```
-
-### 3. Local Development
-
-Start the development server for all projects simultaneously:
-
-```bash
-pnpm dev
-```
-
-This starts the Vite dev server for `client` and `admin`, and watches the `auth-service` and shared UI packages. Turborepo handles task orchestration and outputs logs concurrently.
-
-#### Running a Specific Application (Filters)
-
-If you only want to work on one part of the project, use Turborepo's `--filter` flag to minimize memory consumption:
-
-```bash
-# Start only the storefront (client)
-pnpm --filter client dev
-
-# Start only the administration dashboard (admin)
-pnpm --filter admin dev
-
-# Start only the authentication backend (auth-service)
-pnpm --filter auth-service dev
-```
-
----
-
-## 🔨 Build & Production Ready
-
-### Build All Workspaces
-
-To bundle all applications and compile TypeScript for production:
-
-```bash
-pnpm build
-```
-
-This will run type-checking, build the shared configurations, and compile the `client`, `admin`, and `auth-service` assets. Turborepo caches successful builds to ensure subsequent builds compile only modified files, saving significant time.
-
-### Verify Types & Linting
-
-Validate the codebase's integrity before pushing code:
-
-```bash
-# Run ESLint across the entire workspace
-pnpm lint
-
-# Run TypeScript compilation checks across all modules
-pnpm typecheck
-
-# Auto-format all TypeScript, React, and markdown files using Prettier
-pnpm format
-```
-
----
-
-## 📦 Monorepo Workspace Workflow
-
-### Adding Dependencies
-
-When adding packages, ensure you install them to the correct workspace rather than the root directory:
-
-- **Add a dependency to a specific application** (e.g., adding `axios` to `apps/client`):
-  ```bash
-  pnpm --filter client add axios
-  ```
-- **Add a development dependency to the root** (e.g., adding `nodemon` or tooling):
-  ```bash
-  pnpm add -Dw nodemon
-  ```
-
-### Adding New Shared Components
-
-To add a new component to the shared library (`@repo/ui`):
-
-1.  Navigate to `packages/ui` or use the component generator:
-    ```bash
-    pnpm --filter @repo/ui generate:component
-    ```
-2.  Import and export it inside `packages/ui/src`.
-3.  Any updates are immediately available to `client` and `admin` during development.
-
----
-
-## 🗂️ Project Structure
-
-```text
 e-commerce/
 ├── apps/
-│   ├── admin/             # Vite + React 19 Admin Dashboard
-│   ├── auth-service/      # Express + MongoDB Authentication Service (Microservice)
-│   └── client/            # Vite + React 19 Customer Storefront
+│   ├── client/              React storefront + admin panel (one app, role-based routes)
+│   └── backends/
+│       └── mongo/           Express API + BullMQ workers
+│           └── src/
+│               ├── routes/        URL + middleware → controller
+│               ├── controllers/   validate input, call a service
+│               ├── services/      business logic and database queries
+│               ├── models/        Mongoose schemas
+│               ├── middleware/    auth, admin check, rate limiting, errors
+│               ├── jobs/          queues, producers, workers, processors
+│               └── utils/         jwt, cookies, email, dates…
 ├── packages/
-│   ├── eslint-config/     # Core ESLint configuration profiles
-│   ├── typescript-config/ # Common TypeScript tsconfig configurations
-│   └── ui/                # Shared React UI Component Library
-├── package.json           # Monorepo root configuration
-├── pnpm-workspace.yaml    # pnpm workspace configuration
-├── turbo.json             # Turborepo task pipeline configuration
-└── README.md              # Project documentation (You are here)
+│   ├── types/               shared Zod schemas and types
+│   ├── ui/                  shared React components
+│   ├── eslint-config/
+│   └── typescript-config/
+├── docker-compose.yml       Redis for queues and rate limiting
+└── turbo.json
 ```
+
+## Running it locally
+
+You'll need Node 18+, pnpm 9, Docker, and a MongoDB database (a free
+[MongoDB Atlas](https://www.mongodb.com/atlas) cluster works).
+
+```bash
+git clone git@github.com:venkateshg12/e-commerce-fullstack.git
+cd e-commerce-fullstack
+pnpm install
+
+# Redis, for the job queues and rate limiting
+docker compose up -d
+
+# environment variables
+cp apps/backends/mongo/.env.example apps/backends/mongo/.env   # fill in MongoDB, JWT, SMTP, Google, Razorpay
+cp apps/client/.env.example apps/client/.env                   # VITE_API_URL=http://localhost:5000
+
+pnpm dev                                    # frontend and API together
+```
+
+The API runs on `http://localhost:5000` and the frontend on `http://localhost:5173`.
+
+Handy commands:
+
+```bash
+pnpm --filter client dev          # just the frontend
+pnpm --filter auth-service dev    # just the API (it also starts the job workers)
+pnpm --filter auth-service worker # the job workers as a separate process
+pnpm lint
+pnpm typecheck
+```
+
+## What's next
+
+- Mount the order, promo and address routes, and add routes for cart, wishlist, checkout and products
+- Build the storefront: product listing, product page, cart and checkout screens
+- Admin screens for products and orders
+- Deploy it
+
+## What I learned
+
+The biggest lesson was that the hard parts of a shop aren't the pages, they're the edge cases:
+two people buying the last item, a forged payment confirmation, a logout that doesn't actually
+log anyone out, someone hammering the login form. Most of the code above exists because of one
+of those.
