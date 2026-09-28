@@ -11,3 +11,7 @@ export const db = postgres<Contract>({
   contractJson,
   pg: pool,
 });
+
+// Every model here lives in the `public` schema, so callers reach for `orm.Session`,
+// `orm.User`, etc. instead of repeating `db.orm.public.<Model>` everywhere.
+export const orm = db.orm.public;
