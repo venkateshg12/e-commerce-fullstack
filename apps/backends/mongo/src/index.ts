@@ -23,7 +23,7 @@ import { authRoutes } from "./routes/auth.route";
 import cookieParser from "cookie-parser";
 import { visitorIdMiddleware } from "./middleware/visitorId";
 import { globalLimiter } from "./config/rateLimiter";
-import { trustProxy } from "./utils/rateLimiter/ipExtractor";
+import { extractClientIp, trustProxy } from "./utils/rateLimiter/ipExtractor";
 import { cache } from "./utils/cache";
 import sessionRoutes from "./routes/session.route";
 import productRoutes from "./routes/product.route";
@@ -162,6 +162,29 @@ async function main() {
     app.use(cookieParser());
     app.use(visitorIdMiddleware);
     app.use(globalLimiter);
+
+    /*
+      Shows how the rate limiter identifies the caller, to check TRUSTED_PROXY_CIDRS on a real deploy.
+      Off unless DEBUG_IP_ENDPOINT=true: it echoes proxy headers and reveals which ones are trusted.
+      Declared before the routers mounted at "/" for the same reason as /health below.
+     */
+    if (process.env.DEBUG_IP_ENDPOINT === "true") {
+        app.get("/debug-ip", (req, res) => {
+            const peer = req.socket.remoteAddress;
+            res.json(ok({
+                resolvedIp: extractClientIp(req),
+                expressReqIp: req.ip,
+                tcpPeer: peer,
+                peerIsTrustedProxy: peer ? trustProxy(peer) : false,
+                visitorId: req.visitorId ?? null,
+                headers: {
+                    "cf-connecting-ip": req.headers["cf-connecting-ip"] ?? null,
+                    "x-forwarded-for": req.headers["x-forwarded-for"] ?? null,
+                    "true-client-ip": req.headers["true-client-ip"] ?? null
+                }
+            }));
+        });
+    }
 
 
     /*
