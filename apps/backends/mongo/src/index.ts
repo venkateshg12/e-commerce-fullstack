@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import {
     CORS_ORIGIN,
+    DEBUG_IP_ENDPOINT,
     ENABLE_QUEUE_DASHBOARD,
     NODE_ENV,
     PORT,
@@ -168,7 +169,7 @@ async function main() {
       Off unless DEBUG_IP_ENDPOINT=true: it echoes proxy headers and reveals which ones are trusted.
       Declared before the routers mounted at "/" for the same reason as /health below.
      */
-    if (process.env.DEBUG_IP_ENDPOINT === "true") {
+    if (DEBUG_IP_ENDPOINT === "true") {
         app.get("/debug-ip", (req, res) => {
             const peer = req.socket.remoteAddress;
             res.json(ok({
@@ -294,3 +295,19 @@ main().catch((error) => {
     console.error("failed to start", error);
     process.exit(1);
 })
+
+
+/*
+"Behind proxies, the TCP connection always comes from the last proxy, 
+not the user. The real IP is in headers like X-Forwarded-For, 
+but clients can forge those, so you only trust the parts written 
+by your own infrastructure. Express does this by walking X-Forwarded-For 
+from right to left and stopping at the first address that's not in the 
+trusted-proxy list. On Render, only the local proxy at 127.0.0.1 connects to my app, 
+so Express stops at Render's load balancer address. For rate limiting 
+I don't use req.ip. I read Cloudflare's CF-Connecting-IP, 
+which Cloudflare always overwrites, and only when the connection 
+comes from a trusted proxy. That gives the real client IP, and it can't be spoofed."
+
+
+*/

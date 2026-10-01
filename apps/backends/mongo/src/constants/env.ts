@@ -46,6 +46,7 @@ export const SMTP_PASSWORD = getEnv("SMTP_PASSWORD");
 export const EMAIL_FROM = getEnv("EMAIL_FROM");
 export const GOOGLE_CLIENT_ID = getEnv("GOOGLE_CLIENT_ID");
 export const NODE_ENV = getEnv("NODE_ENV");
+export const DEBUG_IP_ENDPOINT = getEnv("DEBUG_IP_ENDPOINT", "false");
 
 
 export const TRUSTED_PROXY_CIDRS = getEnv("TRUSTED_PROXY_CIDRS", "");
