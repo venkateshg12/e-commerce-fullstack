@@ -147,6 +147,12 @@ importers:
 
   apps/backends/postgres:
     dependencies:
+      '@bull-board/api':
+        specifier: ^8.1.2
+        version: 8.1.2(@bull-board/ui@8.1.2)
+      '@bull-board/express':
+        specifier: ^8.1.2
+        version: 8.1.2
       '@prisma/cli-engine':
         specifier: ^0.4.0
         version: 0.4.0(@prisma/management-api-sdk@1.69.0)(magicast@0.5.5)
@@ -156,21 +162,42 @@ importers:
       '@repo/types':
         specifier: workspace:*
         version: link:../../../packages/types
+      bcrypt:
+        specifier: ^6.0.0
+        version: 6.0.0
+      bullmq:
+        specifier: ^5.80.9
+        version: 5.80.9(redis@6.1.0)
+      cloudinary:
+        specifier: ^2.10.0
+        version: 2.10.0
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
       cors:
         specifier: ^2.8.6
         version: 2.8.6
+      crypto-js:
+        specifier: ^4.2.0
+        version: 4.2.0
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      google-auth-library:
+        specifier: ^9.15.0
+        version: 9.15.1
       helmet:
         specifier: ^8.3.0
         version: 8.3.0
+      ioredis:
+        specifier: ^5.11.1
+        version: 5.11.1
+      jsonwebtoken:
+        specifier: ^9.0.3
+        version: 9.0.3
       morgan:
         specifier: ^1.11.0
         version: 1.11.0
@@ -180,19 +207,37 @@ importers:
       pg:
         specifier: ^8.23.0
         version: 8.23.0
+      proxy-addr:
+        specifier: ^2.0.8
+        version: 2.0.8
+      sharp:
+        specifier: ^0.33.5
+        version: 0.33.5
+      streamifier:
+        specifier: ^0.1.1
+        version: 0.1.1
       zod:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@types/bcrypt':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/cookie-parser':
         specifier: ^1.4.10
         version: 1.4.10(@types/express@5.0.6)
       '@types/cors':
         specifier: ^2.8.19
         version: 2.8.19
+      '@types/crypto-js':
+        specifier: ^4.2.2
+        version: 4.2.2
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
+      '@types/jsonwebtoken':
+        specifier: ^9.0.10
+        version: 9.0.10
       '@types/morgan':
         specifier: ^1.9.10
         version: 1.9.10
@@ -205,6 +250,12 @@ importers:
       '@types/pg':
         specifier: ^8.20.4
         version: 8.20.4
+      '@types/proxy-addr':
+        specifier: ^2.0.3
+        version: 2.0.3
+      '@types/streamifier':
+        specifier: ^0.1.2
+        version: 0.1.2
       prisma:
         specifier: 8.0.0-rc.15
         version: 8.0.0-rc.15(@types/node@26.6.2)(@types/react@19.2.17)(@vercel/nft@1.11.0)(magicast@0.5.5)(pg@8.23.0)(typanion@3.14.0)(typescript@7.0.2)(vite@8.1.3(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.1)(yaml@2.9.1))(ws@8.21.3)
@@ -2990,6 +3041,9 @@ packages:
   '@types/cors@2.8.19':
     resolution: {integrity: sha512-mFNylyeyqN93lfe/9CSxOGREz8cpzAhH+E93xJ4xWQf62V8sQ/24reV2nyzUWM6H6Xji+GGHpkbLe7pVoUEskg==}
 
+  '@types/crypto-js@4.2.2':
+    resolution: {integrity: sha512-sDOLlVbHhXpAUAL0YHDUUwDZf3iN4Bwi4W6a0W0b+QcAezUbRtH4FVb+9J4h+XFPW7l/gQ9F8qC7P+Ec4k8QVQ==}
+
   '@types/esrecurse@4.3.1':
     resolution: {integrity: sha512-xJBAbDifo5hpffDBuHl0Y8ywswbiAp/Wi7Y/GtAgSlZyIABppyurxVueOPE8LUQOxdlgi6Zqce7uoEpqNTeiUw==}
 
@@ -3871,6 +3925,10 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -9265,6 +9323,8 @@ snapshots:
     dependencies:
       '@types/node': 25.9.5
 
+  '@types/crypto-js@4.2.2': {}
+
   '@types/esrecurse@4.3.1': {}
 
   '@types/estree@1.0.9': {}
@@ -10219,6 +10279,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  crypto-js@4.2.0: {}
 
   cssesc@3.0.0: {}
 
