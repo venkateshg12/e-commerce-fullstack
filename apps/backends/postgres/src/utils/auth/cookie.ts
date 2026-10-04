@@ -12,19 +12,19 @@ const defaults: CookieOptions = {
     secure
 };
 
-export const accessCookieOptions = (): CookieOptions => ({
+export const getAccessTokenCookieOptions = (): CookieOptions => ({
     ...defaults,
     expires: fifteenMinutesFromNow()
 });
 
-export const refreshCookieOptions = (): CookieOptions => ({
+export const getRefreshTokenCookieOptions = (): CookieOptions => ({
     ...defaults,
     expires: thirtyDaysFromNow(),
     path: REFRESH_PATH
 });
 
 export const setAuthCookies = ({ res, accessToken, refreshToken }: CookieParams) =>
-    res.cookie("accessToken", accessToken, accessCookieOptions()).cookie("refreshToken", refreshToken, refreshCookieOptions());
+    res.cookie("accessToken", accessToken, getAccessTokenCookieOptions()).cookie("refreshToken", refreshToken, getRefreshTokenCookieOptions());
 
 export const clearAuthCookies = (res: Response) =>
     res.clearCookie("accessToken").clearCookie("refreshToken", { ...defaults, path: REFRESH_PATH });
