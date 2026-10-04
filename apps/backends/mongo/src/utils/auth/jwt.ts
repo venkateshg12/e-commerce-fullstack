@@ -79,10 +79,10 @@ export const verifyToken = <TPayload extends object = AccessTokenPayload>(
     }
 };
 
-/**
- * Verifies an access token's signature, audience and algorithm but not its expiry. Only for
- * identifying which session a caller holds — logout must still find the session to delete after
- * the 15-minute access token has lapsed. Never use it to authorize a request.
+/*
+  Verifies an access token's signature, audience and algorithm but not its expiry. Only for
+  identifying which session a caller holds — logout must still find the session to delete after
+ the 15-minute access token has lapsed. Never use it to authorize a request.
  */
 export const verifyAccessTokenIgnoringExpiry = (token: string) =>
     verifyToken(token, { ...accessTokenVerifyOptions, ignoreExpiration: true });

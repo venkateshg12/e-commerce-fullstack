@@ -309,7 +309,7 @@ export const resendVerificationEmail = async (email: string) => {
     return { message: GENERIC_RESEND_MESSAGE };
 }
 
-export const updateProfileService = async (userId: string | Types.ObjectId, data: UpdateProfileSchema) => {
+export const updateProfileService = async (userId: string | Types.ObjectId,     ) => {
     const user = await UserModel.findById(userId);
     appAssert(user, NOT_FOUND, "User not found");
 
