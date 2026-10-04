@@ -15,8 +15,24 @@
 14. pnpm exec prisma db init  # creates the contract's tables in the database (writes to Neon!)
 15. pnpm run db:test  # queries db.orm.public.User.first(); needs step 14 first
 
-pnpm run db:plan <name>
- pnpm run db:apply
+## Change the schema (edit src/prisma/contract.prisma first)
+
+1. Plan the migration (emits the contract, then writes migrations/app/<timestamp>_<name>/):
+   pnpm db:plan <name>            # e.g. pnpm db:plan add_products
+
+2. Read the SQL it will run (the tidy copy is saved as migration.sql by step 3):
+   pnpm exec prisma migration show <name>
+
+3. Save migration.sql, apply to Neon, and move the db ref forward (needed for the next plan):
+   pnpm db:apply                  # = db:sql + prisma db migrate + prisma db sign
+
+4. Verify Neon matches the contract:
+   pnpm exec prisma db verify
+
+If plan says MIGRATION.PLAN_ORIGIN_UNKNOWN, or apply says MIGRATION.PATH_UNREACHABLE, the db ref
+(migrations/app/refs/db.json) is behind Neon. Fix it, delete any migration folder planned from the wrong origin, re-plan:
+   pnpm exec prisma migration ref set db <hash Neon is at>
+Never plan two migrations in a row without applying the first.
 
 
 
@@ -26,3 +42,5 @@ pnpm add -D @types/morgan
 pnpm add cookie-parser
 pnpm add cookie-parser helmet
 pnpm add -D @types/cookie-parser
+pnpm add jsonwebtoken
+pnpm add -D @types/jsonwebtoken

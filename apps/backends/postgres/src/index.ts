@@ -9,6 +9,10 @@ import { ok } from "./utils/api/apiEnvelope";
 import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 import { db, pool } from "./config/db";
+import { authRoutes } from "./routes/auth.route";
+import { sessionRoutes } from "./routes/session.route";
+import { productRoutes } from "./routes/product.route";
+import { catalogRoutes } from "./routes/catalog.route";
 
 async function main() {
     // Fail at boot, not on the first request, if the database is unreachable.
@@ -49,7 +53,10 @@ async function main() {
     });
 
     // Feature routers get mounted here, one phase at a time.
-
+    app.use("/auth", authRoutes);
+    app.use("/session", sessionRoutes);
+    app.use("/", productRoutes);
+    app.use("/", catalogRoutes);
     // Registered before listening, so a request can never arrive at a server whose 404 and error
     // handlers aren't mounted yet.
     app.use(notFound);
