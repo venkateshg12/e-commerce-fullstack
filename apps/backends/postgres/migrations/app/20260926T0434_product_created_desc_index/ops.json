@@ -1,0 +1,80 @@
+[
+  {
+    "id": "dropIndex.product.product_status_createdAt_idx_58610442",
+    "label": "Drop index \"product_status_createdAt_idx_58610442\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "product_status_createdAt_idx_58610442",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"product_status_createdAt_idx_58610442\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_status_createdAt_idx_58610442\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"product_status_createdAt_idx_58610442\"",
+        "sql": "DROP INDEX \"public\".\"product_status_createdAt_idx_58610442\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"product_status_createdAt_idx_58610442\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_status_createdAt_idx_58610442\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.product.product_status_created_desc_4696f21c",
+    "label": "Create index \"product_status_created_desc_4696f21c\" on \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "product_status_created_desc_4696f21c",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"product_status_created_desc_4696f21c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_status_created_desc_4696f21c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"product_status_created_desc_4696f21c\"",
+        "sql": "CREATE INDEX \"product_status_created_desc_4696f21c\" ON \"public\".\"product\" (status, \"createdAt\" DESC)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"product_status_created_desc_4696f21c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_status_created_desc_4696f21c\""
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,80 @@
+[
+  {
+    "id": "table.brand",
+    "label": "Create table \"brand\"",
+    "summary": "Creates table \"brand\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "brand"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"brand\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"brand\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"brand\"",
+        "sql": "CREATE TABLE \"public\".\"brand\" (\n  \"id\" uuid NOT NULL,\n  \"name\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"brand\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"brand\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.brand.brand_name_lower_e40b0be1",
+    "label": "Create index \"brand_name_lower_e40b0be1\" on \"brand\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "brand_name_lower_e40b0be1",
+        "table": "brand"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"brand_name_lower_e40b0be1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"brand_name_lower_e40b0be1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"brand_name_lower_e40b0be1\"",
+        "sql": "CREATE UNIQUE INDEX \"brand_name_lower_e40b0be1\" ON \"public\".\"brand\" (lower(name))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"brand_name_lower_e40b0be1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"brand_name_lower_e40b0be1\""
+        ]
+      }
+    ]
+  }
+]

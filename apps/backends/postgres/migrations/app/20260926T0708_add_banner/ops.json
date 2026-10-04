@@ -1,0 +1,207 @@
+[
+  {
+    "id": "table.banner",
+    "label": "Create table \"banner\"",
+    "summary": "Creates table \"banner\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "banner"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"banner\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"banner\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"banner\"",
+        "sql": "CREATE TABLE \"public\".\"banner\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"createdBy\" uuid NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"imagePublicId\" text NOT NULL,\n  \"imageUrl\" text NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"banner\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"banner\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterType.order.discountAmount",
+    "label": "Alter type of \"order\".\"discountAmount\" to float8",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "discountAmount",
+        "table": "order"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"discountAmount\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "order",
+          "discountAmount"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"discountAmount\"",
+        "sql": "ALTER TABLE \"public\".\"order\" ALTER COLUMN \"discountAmount\" TYPE float8 USING \"discountAmount\"::float8"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"discountAmount\" has type \"double precision\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "order",
+          "discountAmount",
+          "double precision"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  },
+  {
+    "id": "index.banner.banner_createdBy_idx_ba0f792f",
+    "label": "Create index \"banner_createdBy_idx_ba0f792f\" on \"banner\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "banner_createdBy_idx_ba0f792f",
+        "table": "banner"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"banner_createdBy_idx_ba0f792f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"banner_createdBy_idx_ba0f792f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"banner_createdBy_idx_ba0f792f\"",
+        "sql": "CREATE INDEX \"banner_createdBy_idx_ba0f792f\" ON \"public\".\"banner\" (\"createdBy\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"banner_createdBy_idx_ba0f792f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"banner_createdBy_idx_ba0f792f\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.order.order_cancelled_sweep_64021f13",
+    "label": "Create index \"order_cancelled_sweep_64021f13\" on \"order\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "order_cancelled_sweep_64021f13",
+        "table": "order"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"order_cancelled_sweep_64021f13\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"order_cancelled_sweep_64021f13\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"order_cancelled_sweep_64021f13\"",
+        "sql": "CREATE INDEX \"order_cancelled_sweep_64021f13\" ON \"public\".\"order\" (\"cancelledAt\") WHERE ((\"orderStatus\" = 'cancelled'))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"order_cancelled_sweep_64021f13\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"order_cancelled_sweep_64021f13\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.banner.banner_createdBy_fkey",
+    "label": "Add foreign key \"banner_createdBy_fkey\" on \"banner\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "banner_createdBy_fkey",
+        "table": "banner"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"banner_createdBy_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "banner_createdBy_fkey",
+          "public",
+          "\"public\".\"banner\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"banner_createdBy_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"banner\"\nADD CONSTRAINT \"banner_createdBy_fkey\"\nFOREIGN KEY (\"createdBy\")\nREFERENCES \"public\".\"user\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"banner_createdBy_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "banner_createdBy_fkey",
+          "public",
+          "\"public\".\"banner\""
+        ]
+      }
+    ]
+  }
+]

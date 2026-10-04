@@ -1,0 +1,164 @@
+[
+  {
+    "id": "dropColumn.user.address",
+    "label": "Drop column \"address\" from \"user\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "address",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"address\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "address"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"address\"",
+        "sql": "ALTER TABLE \"public\".\"user\" DROP COLUMN \"address\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"address\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "address"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.addressSchema",
+    "label": "Create table \"addressSchema\"",
+    "summary": "Creates table \"addressSchema\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "addressSchema"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"addressSchema\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"addressSchema\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"addressSchema\"",
+        "sql": "CREATE TABLE \"public\".\"addressSchema\" (\n  \"address\" text NOT NULL,\n  \"city\" text NOT NULL,\n  \"country\" text DEFAULT 'India' NOT NULL,\n  \"fullName\" text NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"isDefault\" bool DEFAULT false NOT NULL,\n  \"postalCode\" text NOT NULL,\n  \"state\" text NOT NULL,\n  \"userId\" uuid NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"addressSchema\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"addressSchema\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.addressSchema.addressSchema_userId_idx_a489d58a",
+    "label": "Create index \"addressSchema_userId_idx_a489d58a\" on \"addressSchema\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "addressSchema_userId_idx_a489d58a",
+        "table": "addressSchema"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"addressSchema_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"addressSchema_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"addressSchema_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"addressSchema_userId_idx_a489d58a\" ON \"public\".\"addressSchema\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"addressSchema_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"addressSchema_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.addressSchema.addressSchema_userId_fkey",
+    "label": "Add foreign key \"addressSchema_userId_fkey\" on \"addressSchema\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "addressSchema_userId_fkey",
+        "table": "addressSchema"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"addressSchema_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "addressSchema_userId_fkey",
+          "public",
+          "\"public\".\"addressSchema\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"addressSchema_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"addressSchema\"\nADD CONSTRAINT \"addressSchema_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"addressSchema_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "addressSchema_userId_fkey",
+          "public",
+          "\"public\".\"addressSchema\""
+        ]
+      }
+    ]
+  }
+]

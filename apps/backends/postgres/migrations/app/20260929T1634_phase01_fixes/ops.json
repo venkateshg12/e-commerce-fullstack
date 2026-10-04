@@ -1,0 +1,526 @@
+[
+  {
+    "id": "column.public.orderItem.image",
+    "label": "Add column \"image\" to \"orderItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "image",
+        "table": "orderItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"image\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "orderItem",
+          "image"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"image\"",
+        "sql": "ALTER TABLE \"public\".\"orderItem\" ADD COLUMN \"image\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"image\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "orderItem",
+          "image"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.orderItem.title",
+    "label": "Add column \"title\" to \"orderItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "title",
+        "table": "orderItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"title\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "orderItem",
+          "title"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"title\"",
+        "sql": "ALTER TABLE \"public\".\"orderItem\" ADD COLUMN \"title\" text DEFAULT '' NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"title\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "orderItem",
+          "title"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterType.product.salesPercentage",
+    "label": "Alter type of \"product\".\"salesPercentage\" to int4",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "salesPercentage",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"salesPercentage\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "salesPercentage"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"salesPercentage\"",
+        "sql": "ALTER TABLE \"public\".\"product\" ALTER COLUMN \"salesPercentage\" TYPE int4 USING \"salesPercentage\"::int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"salesPercentage\" has type \"integer\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "salesPercentage",
+          "integer"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  },
+  {
+    "id": "alterType.promo.percentage",
+    "label": "Alter type of \"promo\".\"percentage\" to int4",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "percentage",
+        "table": "promo"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"percentage\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "promo",
+          "percentage"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"percentage\"",
+        "sql": "ALTER TABLE \"public\".\"promo\" ALTER COLUMN \"percentage\" TYPE int4 USING \"percentage\"::int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"percentage\" has type \"integer\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "promo",
+          "percentage",
+          "integer"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  },
+  {
+    "id": "index.address.address_one_default_8a30964e",
+    "label": "Create index \"address_one_default_8a30964e\" on \"address\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "address_one_default_8a30964e",
+        "table": "address"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"address_one_default_8a30964e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"address_one_default_8a30964e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"address_one_default_8a30964e\"",
+        "sql": "CREATE UNIQUE INDEX \"address_one_default_8a30964e\" ON \"public\".\"address\" (\"userId\") WHERE (\"isDefault\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"address_one_default_8a30964e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"address_one_default_8a30964e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.cartItem.cart_item_unique_312d3cd5",
+    "label": "Create index \"cart_item_unique_312d3cd5\" on \"cartItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "cart_item_unique_312d3cd5",
+        "table": "cartItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"cart_item_unique_312d3cd5\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cart_item_unique_312d3cd5\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"cart_item_unique_312d3cd5\"",
+        "sql": "CREATE UNIQUE INDEX \"cart_item_unique_312d3cd5\" ON \"public\".\"cartItem\" (\"cartId\", \"productId\", coalesce(color, ''), coalesce(size, ''))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"cart_item_unique_312d3cd5\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cart_item_unique_312d3cd5\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "extension.pg_trgm",
+    "label": "Create extension \"pg_trgm\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create extension \"pg_trgm\"",
+        "sql": "CREATE EXTENSION IF NOT EXISTS \"pg_trgm\""
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "index.product.product_title_trgm_dbf5ca54",
+    "label": "Create index \"product_title_trgm_dbf5ca54\" on \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "product_title_trgm_dbf5ca54",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"product_title_trgm_dbf5ca54\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_title_trgm_dbf5ca54\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"product_title_trgm_dbf5ca54\"",
+        "sql": "CREATE INDEX \"product_title_trgm_dbf5ca54\" ON \"public\".\"product\" USING \"gin\" (title gin_trgm_ops)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"product_title_trgm_dbf5ca54\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_title_trgm_dbf5ca54\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.productImage.product_image_one_cover_f9da048c",
+    "label": "Create index \"product_image_one_cover_f9da048c\" on \"productImage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "product_image_one_cover_f9da048c",
+        "table": "productImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"product_image_one_cover_f9da048c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_image_one_cover_f9da048c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"product_image_one_cover_f9da048c\"",
+        "sql": "CREATE UNIQUE INDEX \"product_image_one_cover_f9da048c\" ON \"public\".\"productImage\" (\"productId\") WHERE (\"isCover\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"product_image_one_cover_f9da048c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_image_one_cover_f9da048c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "function.public.set_updated_at",
+    "label": "Create function \"set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create function \"set_updated_at\"",
+        "sql": "CREATE OR REPLACE FUNCTION \"public\".\"set_updated_at\"() RETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.\"updatedAt\" = now();\n  RETURN NEW;\nEND;\n$$"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.user.set_updated_at",
+    "label": "Create trigger \"user_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"user_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"user_set_updated_at\" BEFORE UPDATE ON \"public\".\"user\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.category.set_updated_at",
+    "label": "Create trigger \"category_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"category_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"category_set_updated_at\" BEFORE UPDATE ON \"public\".\"category\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.subCategory.set_updated_at",
+    "label": "Create trigger \"subCategory_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"subCategory_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"subCategory_set_updated_at\" BEFORE UPDATE ON \"public\".\"subCategory\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.brand.set_updated_at",
+    "label": "Create trigger \"brand_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"brand_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"brand_set_updated_at\" BEFORE UPDATE ON \"public\".\"brand\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.product.set_updated_at",
+    "label": "Create trigger \"product_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"product_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"product_set_updated_at\" BEFORE UPDATE ON \"public\".\"product\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.cart.set_updated_at",
+    "label": "Create trigger \"cart_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"cart_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"cart_set_updated_at\" BEFORE UPDATE ON \"public\".\"cart\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.wishlist.set_updated_at",
+    "label": "Create trigger \"wishlist_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"wishlist_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"wishlist_set_updated_at\" BEFORE UPDATE ON \"public\".\"wishlist\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.promo.set_updated_at",
+    "label": "Create trigger \"promo_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"promo_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"promo_set_updated_at\" BEFORE UPDATE ON \"public\".\"promo\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.order.set_updated_at",
+    "label": "Create trigger \"order_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"order_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"order_set_updated_at\" BEFORE UPDATE ON \"public\".\"order\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "trigger.public.banner.set_updated_at",
+    "label": "Create trigger \"banner_set_updated_at\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create trigger \"banner_set_updated_at\"",
+        "sql": "CREATE OR REPLACE TRIGGER \"banner_set_updated_at\" BEFORE UPDATE ON \"public\".\"banner\" FOR EACH ROW EXECUTE FUNCTION \"public\".\"set_updated_at\"()"
+      }
+    ],
+    "postcheck": []
+  }
+]

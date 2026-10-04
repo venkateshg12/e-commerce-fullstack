@@ -1,0 +1,239 @@
+[
+  {
+    "id": "table.category",
+    "label": "Create table \"category\"",
+    "summary": "Creates table \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"category\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"category\"",
+        "sql": "CREATE TABLE \"public\".\"category\" (\n  \"id\" uuid NOT NULL,\n  \"name\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"category\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.subCategory",
+    "label": "Create table \"subCategory\"",
+    "summary": "Creates table \"subCategory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "subCategory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"subCategory\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"subCategory\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"subCategory\"",
+        "sql": "CREATE TABLE \"public\".\"subCategory\" (\n  \"categoryId\" uuid NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"name\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"subCategory\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"subCategory\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.category.category_name_lower_e40b0be1",
+    "label": "Create index \"category_name_lower_e40b0be1\" on \"category\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "category_name_lower_e40b0be1",
+        "table": "category"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"category_name_lower_e40b0be1\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_name_lower_e40b0be1\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"category_name_lower_e40b0be1\"",
+        "sql": "CREATE UNIQUE INDEX \"category_name_lower_e40b0be1\" ON \"public\".\"category\" (lower(name))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"category_name_lower_e40b0be1\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"category_name_lower_e40b0be1\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.subCategory.subCategory_categoryId_idx_15c304f2",
+    "label": "Create index \"subCategory_categoryId_idx_15c304f2\" on \"subCategory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "subCategory_categoryId_idx_15c304f2",
+        "table": "subCategory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"subCategory_categoryId_idx_15c304f2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"subCategory_categoryId_idx_15c304f2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"subCategory_categoryId_idx_15c304f2\"",
+        "sql": "CREATE INDEX \"subCategory_categoryId_idx_15c304f2\" ON \"public\".\"subCategory\" (\"categoryId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"subCategory_categoryId_idx_15c304f2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"subCategory_categoryId_idx_15c304f2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.subCategory.sub_category_name_lower_0f7f2b6e",
+    "label": "Create index \"sub_category_name_lower_0f7f2b6e\" on \"subCategory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "sub_category_name_lower_0f7f2b6e",
+        "table": "subCategory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"sub_category_name_lower_0f7f2b6e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sub_category_name_lower_0f7f2b6e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"sub_category_name_lower_0f7f2b6e\"",
+        "sql": "CREATE UNIQUE INDEX \"sub_category_name_lower_0f7f2b6e\" ON \"public\".\"subCategory\" (\"categoryId\", lower(name))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"sub_category_name_lower_0f7f2b6e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"sub_category_name_lower_0f7f2b6e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.subCategory.subCategory_categoryId_fkey",
+    "label": "Add foreign key \"subCategory_categoryId_fkey\" on \"subCategory\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "subCategory_categoryId_fkey",
+        "table": "subCategory"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"subCategory_categoryId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "subCategory_categoryId_fkey",
+          "public",
+          "\"public\".\"subCategory\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"subCategory_categoryId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"subCategory\"\nADD CONSTRAINT \"subCategory_categoryId_fkey\"\nFOREIGN KEY (\"categoryId\")\nREFERENCES \"public\".\"category\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"subCategory_categoryId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "subCategory_categoryId_fkey",
+          "public",
+          "\"public\".\"subCategory\""
+        ]
+      }
+    ]
+  }
+]

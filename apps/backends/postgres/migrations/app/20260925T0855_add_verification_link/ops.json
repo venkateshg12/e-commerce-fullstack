@@ -1,0 +1,119 @@
+[
+  {
+    "id": "table.verificationLink",
+    "label": "Create table \"verificationLink\"",
+    "summary": "Creates table \"verificationLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "verificationLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"verificationLink\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"verificationLink\"",
+        "sql": "CREATE TABLE \"public\".\"verificationLink\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamptz NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"token\" text NOT NULL,\n  \"type\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"verificationLink\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.verificationLink.verificationLink_expiresAt_idx_6b6b8c10",
+    "label": "Create index \"verificationLink_expiresAt_idx_6b6b8c10\" on \"verificationLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "verificationLink_expiresAt_idx_6b6b8c10",
+        "table": "verificationLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"verificationLink_expiresAt_idx_6b6b8c10\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink_expiresAt_idx_6b6b8c10\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"verificationLink_expiresAt_idx_6b6b8c10\"",
+        "sql": "CREATE INDEX \"verificationLink_expiresAt_idx_6b6b8c10\" ON \"public\".\"verificationLink\" (\"expiresAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"verificationLink_expiresAt_idx_6b6b8c10\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink_expiresAt_idx_6b6b8c10\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.verificationLink.verificationLink_token_idx_8b25281e",
+    "label": "Create index \"verificationLink_token_idx_8b25281e\" on \"verificationLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "verificationLink_token_idx_8b25281e",
+        "table": "verificationLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"verificationLink_token_idx_8b25281e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink_token_idx_8b25281e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"verificationLink_token_idx_8b25281e\"",
+        "sql": "CREATE INDEX \"verificationLink_token_idx_8b25281e\" ON \"public\".\"verificationLink\" (\"token\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"verificationLink_token_idx_8b25281e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink_token_idx_8b25281e\""
+        ]
+      }
+    ]
+  }
+]

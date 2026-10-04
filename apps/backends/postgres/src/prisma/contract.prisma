@@ -1,2 +1,364 @@
+enum AuthProvider {
+     @@type("pg/text@1")
+    local
+    google
+}
+enum Role {
+     @@type("pg/text@1")
+    user 
+    admin
+}
+
+enum Size {
+    @@type("pg/text@1")
+
+    S
+    M
+    L
+    XL
+    XXL
+}
 
 
+enum Status {
+    @@type("pg/text@1")
+
+    active
+    inactive
+}
+
+enum UploadStatus {
+    @@type("pg/text@1")
+
+    PENDING
+    PROCESSING
+    READY
+    FAILED
+}
+
+enum PaymentStatus {
+    @@type("pg/text@1")
+
+    pending 
+    paid 
+    failed 
+}
+
+enum OrderStatus {
+    @@type("pg/text@1")
+
+    pending_payment
+    placed
+    shipped
+    delivered
+    returned
+    cancelled
+}
+
+enum CancelledBy {
+    @@type("pg/text@1")
+
+    customer 
+    admin 
+}
+
+enum VerificationLinkType {
+    @@type("pg/text@1")
+
+    email_verification
+    password_reset
+}
+
+
+model User {
+    id  Uuid @id @default(uuid())
+    email String @unique
+    passwordHash String?
+    name String?
+    googleId String? @unique
+    authProvider AuthProvider @default(local)
+    avatar String?
+    role  Role @default(user)
+    points Int @default(0)
+    address Address[]
+    verified Boolean @default(false)
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+
+}
+
+model Address {
+    id Uuid @id @default(uuid())
+    userId  Uuid
+    fullName String
+    address String
+    state String
+    city String
+    country String @default("India")
+    postalCode String 
+    isDefault Boolean @default(false)
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    @@index([userId])
+    @@index([userId], unique: true, where: "\"isDefault\"", name: "address_one_default")
+}
+
+
+model Session {
+    id Uuid @id @default(uuid())
+    userId Uuid
+    userAgent String?
+    createdAt TimestamptzString @default(now())
+    expiresAt TimestamptzString @default(dbgenerated("(CURRENT_TIMESTAMP + '30 days'::interval)"))
+    refreshJti String
+    prevRefreshJti String?
+    rotatedAt TimestamptzString?
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([expiresAt])
+}
+
+model VerificationLink {
+    id Uuid @id @default(uuid())
+    userId Uuid
+    type VerificationLinkType
+    token String @unique
+    createdAt TimestamptzString @default(now())
+    expiresAt TimestamptzString
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    @@index([userId])
+    @@index([expiresAt])
+}
+
+model Category {
+    id Uuid @id @default(uuid())
+    name String
+    subCategories SubCategory[]
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+    @@index(expression: "lower(name)", unique: true, name: "category_name_lower")
+}
+
+model SubCategory {
+    id Uuid @id @default(uuid())
+    name String
+    categoryId Uuid
+    category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+    @@index(expression: "\"categoryId\", lower(name)", unique: true, name: "sub_category_name_lower")
+}
+
+model Brand {
+    id Uuid @id @default(uuid())
+    name String
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+    @@index(expression: "lower(name)", unique: true, name: "brand_name_lower")
+}
+
+model Product {
+    id Uuid @id @default(uuid())
+    title String
+    description String
+    categoryId Uuid
+    brandId Uuid
+    subCategoryId Uuid?
+    images ProductImage[]
+    variants ProductVariant[]
+    colors String[]
+    sizes Size[]
+    price Int
+    salesPercentage Int @default(0)
+    status Status @default(active)
+    uploadStatus UploadStatus @default(PENDING)
+    uploadError String?
+    createdBy  Uuid
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+    category Category @relation(fields: [categoryId], references: [id])
+    brand Brand @relation(fields: [brandId], references: [id])
+    subCategory SubCategory? @relation(fields: [subCategoryId], references: [id])
+    creator User @relation(fields: [createdBy], references: [id])
+
+    @@index(expression: "status, \"createdAt\" DESC", name: "product_status_created_desc")
+    @@index([status, price])
+    @@index([colors], type: "gin", name: "product_colors_gin")
+    @@index([sizes], type: "gin", name: "product_sizes_gin")
+    @@index(expression: "title gin_trgm_ops", type: "gin", name: "product_title_trgm")
+    @@index([categoryId, status])
+    @@index([brandId, status])
+    @@index([subCategoryId, status])
+}
+
+model ProductImage {
+    id Uuid @id @default(uuid())
+    productId Uuid
+    url String
+    publicId String
+    isCover Boolean @default(false)
+    color String?
+    // Gallery order, lowest first. Mongo kept images in array order; a table has none, so it's stored.
+    position Int @default(0)
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+    @@index([productId, position])
+    @@index([productId], unique: true, where: "\"isCover\"", name: "product_image_one_cover")
+}
+
+
+model ProductVariant {
+    id Uuid @id @default(uuid())
+    productId Uuid
+    color String?
+    size  Size?
+    stock Int @default(0)
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    @@check(expression: "stock >= 0", name: "product_variant_stock_nonneg")
+
+    @@index(expression: "\"productId\", coalesce(color, ''), coalesce(size, '')", unique: true, name: "product_variant_unique")
+
+}
+
+model CartItem {
+    id Uuid @id @default(uuid())
+    productId Uuid 
+    cartId Uuid
+    quantity Int
+    color String?
+    size Size?
+    image String?
+
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+    cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+     
+    @@check(expression: "quantity >= 1", name: "cart_item_quantity_min")
+    @@index(expression: "\"cartId\", \"productId\", coalesce(color, ''), coalesce(size, '')", unique: true, name: "cart_item_unique")
+}
+
+
+model Cart {
+    id Uuid @id @default(uuid())
+    userId Uuid @unique
+    items CartItem[]
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model Wishlist {
+    id Uuid @id @default(uuid())
+    userId Uuid @unique
+    products WishlistProduct[]
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WishlistProduct {
+    wishlistId Uuid
+    productId Uuid
+    createdAt TimestamptzString @default(now())
+
+    wishlist Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    @@id([wishlistId, productId])
+
+}
+
+model Promo {
+    id Uuid @id @default(uuid())
+    code String @unique
+    percentage Int
+    count Int @default(0)
+    minimumOrderValue Int @default(0) 
+    startsAt TimestamptzString 
+    endsAt TimestamptzString
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+    @@check(expression: "percentage >= 1 AND percentage <= 100", name: "promo_percentage_range")
+    @@check(expression: "count >= 0", name: "promo_count_min")
+    @@check(expression: "\"minimumOrderValue\" >= 0", name: "promo_minimum_order_value")
+    @@check(expression: "code = upper(btrim(code))", name: "promo_code_uppercase_trimmed")
+
+}
+
+model Order {
+    id Uuid @id @default(uuid())
+    userId Uuid
+    customerName String @default("")
+    customerEmail String 
+    items OrderItem[]
+    totalItems Int
+    deliveryName String
+    deliveryAddress String 
+    promoCode String @default("")
+    discountAmount Int @default(0)
+    totalAmount Int
+    paymentStatus PaymentStatus @default(pending)
+    orderStatus OrderStatus @default(pending_payment)
+    razorpayOrderId String @unique
+    paymentId String @default("")
+    paidAt TimestamptzString?
+    deliveredAt TimestamptzString?
+    returnedAt TimestamptzString?
+    shippedAt TimestamptzString?
+    cancelledAt TimestamptzString?
+    cancelledBy  CancelledBy?
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now()) 
+
+    user User @relation(fields: [userId], references: [id])
+
+    @@check(expression: "\"totalItems\" >= 1", name: "order_total_item_min")
+    @@check(expression: "\"discountAmount\" >= 0", name: "order_discount_amount_min")
+    @@check(expression: "\"totalAmount\" >= 0", name: "order_total_amount_min")
+    @@check(expression: "\"promoCode\" = upper(btrim(\"promoCode\"))", name: "order_promo_code_uppercase")
+    @@index(expression: "\"userId\", \"createdAt\" DESC", name: "order_userId_createdAt")
+    @@index(expression: "\"orderStatus\", \"createdAt\" DESC", name: "order_orderStatus_createdAt")
+    @@index(expression: "\"paymentStatus\", \"createdAt\" DESC", name: "order_paymentStatus_createdAt")
+    @@index([cancelledAt], where: "(\"orderStatus\" = 'cancelled')", name: "order_cancelled_sweep")
+
+}
+
+model OrderItem {
+    id Uuid @id @default(uuid())
+    orderId Uuid
+    productId Uuid?
+    title String @default("")
+    image String?
+    quantity Int
+    color String?
+    size Size?
+    unitPrice Int
+    itemTotal Int
+    createdAt TimestamptzString @default(now())
+
+   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+    product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+    @@check(expression: "\"itemTotal\" >= 0", name: "order_item_total_min")
+    @@check(expression: "\"unitPrice\" >= 0", name: "order_item_unit_price_min")
+    @@check(expression: "quantity >= 1", name: "order_item_quantity_min")
+}
+
+model Banner {
+    id Uuid @id @default(uuid())
+    imageUrl String
+    imagePublicId String
+    createdBy Uuid
+    createdAt TimestamptzString @default(now())
+    updatedAt TimestamptzString @default(now())
+
+    creator User @relation(fields: [createdBy], references: [id])
+}

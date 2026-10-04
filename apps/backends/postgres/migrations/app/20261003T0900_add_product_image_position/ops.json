@@ -1,0 +1,122 @@
+[
+  {
+    "id": "dropIndex.productImage.productImage_productId_idx_5858600a",
+    "label": "Drop index \"productImage_productId_idx_5858600a\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "productImage_productId_idx_5858600a",
+        "table": "productImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"productImage_productId_idx_5858600a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"productImage_productId_idx_5858600a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"productImage_productId_idx_5858600a\"",
+        "sql": "DROP INDEX \"public\".\"productImage_productId_idx_5858600a\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"productImage_productId_idx_5858600a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"productImage_productId_idx_5858600a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.productImage.position",
+    "label": "Add column \"position\" to \"productImage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "position",
+        "table": "productImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"position\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "productImage",
+          "position"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"position\"",
+        "sql": "ALTER TABLE \"public\".\"productImage\" ADD COLUMN \"position\" int4 DEFAULT 0 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"position\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "productImage",
+          "position"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.productImage.productImage_productId_position_idx_902b1475",
+    "label": "Create index \"productImage_productId_position_idx_902b1475\" on \"productImage\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "productImage_productId_position_idx_902b1475",
+        "table": "productImage"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"productImage_productId_position_idx_902b1475\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"productImage_productId_position_idx_902b1475\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"productImage_productId_position_idx_902b1475\"",
+        "sql": "CREATE INDEX \"productImage_productId_position_idx_902b1475\" ON \"public\".\"productImage\" (\"productId\", \"position\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"productImage_productId_position_idx_902b1475\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"productImage_productId_position_idx_902b1475\""
+        ]
+      }
+    ]
+  }
+]

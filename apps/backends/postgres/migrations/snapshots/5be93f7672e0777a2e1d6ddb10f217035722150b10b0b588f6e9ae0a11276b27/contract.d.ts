@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'2eface6fd5ec08df18ab97925dfb3ce74e782ad51eeb7439cb6627bcc0f55beb'>;
+  StorageHashBase<'5be93f7672e0777a2e1d6ddb10f217035722150b10b0b588f6e9ae0a11276b27'>;
 export type ExecutionHash =
   ExecutionHashBase<'c67396d39bfb5678256fbeedd05954c5c55afedbf055b6b49e1356b8714bfbf6'>;
 export type ProfileHash =
@@ -351,7 +351,6 @@ export type FieldOutputTypes = {
       readonly publicId: CodecTypes['pg/text@1']['output'];
       readonly isCover: CodecTypes['pg/bool@1']['output'];
       readonly color: CodecTypes['pg/text@1']['output'] | null;
-      readonly position: CodecTypes['pg/int4@1']['output'];
     };
     readonly ProductVariant: {
       readonly id: CodecTypes['pg/uuid@1']['output'];
@@ -534,7 +533,6 @@ export type FieldInputTypes = {
       readonly publicId: CodecTypes['pg/text@1']['input'];
       readonly isCover: CodecTypes['pg/bool@1']['input'];
       readonly color: CodecTypes['pg/text@1']['input'] | null;
-      readonly position: CodecTypes['pg/int4@1']['input'];
     };
     readonly ProductVariant: {
       readonly id: CodecTypes['pg/uuid@1']['input'];
@@ -714,7 +712,6 @@ export type StorageColumnTypes = {
       readonly color: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/uuid@1']['output'];
       readonly isCover: CodecTypes['pg/bool@1']['output'];
-      readonly position: CodecTypes['pg/int4@1']['output'];
       readonly productId: CodecTypes['pg/uuid@1']['output'];
       readonly publicId: CodecTypes['pg/text@1']['output'];
       readonly url: CodecTypes['pg/text@1']['output'];
@@ -897,7 +894,6 @@ export type StorageColumnInputTypes = {
       readonly color: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/uuid@1']['input'];
       readonly isCover: CodecTypes['pg/bool@1']['input'];
-      readonly position: CodecTypes['pg/int4@1']['input'];
       readonly productId: CodecTypes['pg/uuid@1']['input'];
       readonly publicId: CodecTypes['pg/text@1']['input'];
       readonly url: CodecTypes['pg/text@1']['input'];
@@ -1082,7 +1078,6 @@ export namespace Models {
     publicId: CodecTypes['pg/text@1']['output'];
     isCover: CodecTypes['pg/bool@1']['output'];
     color: CodecTypes['pg/text@1']['output'] | null;
-    position: CodecTypes['pg/int4@1']['output'];
     product: public_Product;
     readonly [RelationKeys]?: 'product';
   };
@@ -2151,23 +2146,14 @@ type ContractBase = Omit<
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
                 };
-                readonly position: {
-                  readonly nativeType: 'int4';
-                  readonly codecId: 'pg/int4@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
-                  };
-                };
               };
               primaryKey: { readonly columns: readonly ['id'] };
               uniques: readonly [];
               indexes: readonly [
                 {
-                  readonly name: 'productImage_productId_position_idx_902b1475';
-                  readonly prefix: 'productImage_productId_position_idx';
-                  readonly columns: readonly ['productId', 'position'];
+                  readonly name: 'productImage_productId_idx_5858600a';
+                  readonly prefix: 'productImage_productId_idx';
+                  readonly columns: readonly ['productId'];
                   readonly unique: false;
                 },
                 {
@@ -3597,10 +3583,6 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
-              readonly position: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
-              };
             };
             readonly relations: {
               readonly product: {
@@ -3626,7 +3608,6 @@ type ContractBase = Omit<
                 readonly publicId: { readonly column: 'publicId' };
                 readonly isCover: { readonly column: 'isCover' };
                 readonly color: { readonly column: 'color' };
-                readonly position: { readonly column: 'position' };
               };
             };
           };

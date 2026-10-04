@@ -1,0 +1,463 @@
+[
+  {
+    "id": "dropTable.orderItem",
+    "label": "Drop table \"orderItem\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "orderItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"orderItem\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"orderItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"orderItem\"",
+        "sql": "DROP TABLE \"public\".\"orderItem\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"orderItem\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"orderItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropIndex.verificationLink.verificationLink_token_idx_8b25281e",
+    "label": "Drop index \"verificationLink_token_idx_8b25281e\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "verificationLink_token_idx_8b25281e",
+        "table": "verificationLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"verificationLink_token_idx_8b25281e\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink_token_idx_8b25281e\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"verificationLink_token_idx_8b25281e\"",
+        "sql": "DROP INDEX \"public\".\"verificationLink_token_idx_8b25281e\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"verificationLink_token_idx_8b25281e\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"verificationLink_token_idx_8b25281e\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterType.order.discountAmount",
+    "label": "Alter type of \"order\".\"discountAmount\" to int4",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "discountAmount",
+        "table": "order"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"discountAmount\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "order",
+          "discountAmount"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"discountAmount\"",
+        "sql": "ALTER TABLE \"public\".\"order\" ALTER COLUMN \"discountAmount\" TYPE int4 USING \"discountAmount\"::int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"discountAmount\" has type \"integer\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "order",
+          "discountAmount",
+          "integer"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  },
+  {
+    "id": "alterType.order.totalAmount",
+    "label": "Alter type of \"order\".\"totalAmount\" to int4",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "totalAmount",
+        "table": "order"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"totalAmount\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "order",
+          "totalAmount"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"totalAmount\"",
+        "sql": "ALTER TABLE \"public\".\"order\" ALTER COLUMN \"totalAmount\" TYPE int4 USING \"totalAmount\"::int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"totalAmount\" has type \"integer\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "order",
+          "totalAmount",
+          "integer"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  },
+  {
+    "id": "alterType.product.price",
+    "label": "Alter type of \"product\".\"price\" to int4",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "price",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"price\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "price"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"price\"",
+        "sql": "ALTER TABLE \"public\".\"product\" ALTER COLUMN \"price\" TYPE int4 USING \"price\"::int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"price\" has type \"integer\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "product",
+          "price",
+          "integer"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  },
+  {
+    "id": "alterType.promo.minimumOrderValue",
+    "label": "Alter type of \"promo\".\"minimumOrderValue\" to int4",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "minimumOrderValue",
+        "table": "promo"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"minimumOrderValue\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "promo",
+          "minimumOrderValue"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "alter type of \"minimumOrderValue\"",
+        "sql": "ALTER TABLE \"public\".\"promo\" ALTER COLUMN \"minimumOrderValue\" TYPE int4 USING \"minimumOrderValue\"::int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"minimumOrderValue\" has type \"integer\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_attribute\" AS \"a\" INNER JOIN \"pg_class\" AS \"c\" ON \"c\".\"oid\" = \"a\".\"attrelid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"relnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"c\".\"relname\" = $2 AND \"a\".\"attname\" = $3 AND (format_type(\"a\".\"atttypid\", \"a\".\"atttypmod\")) = $4 AND NOT (\"a\".\"attisdropped\"))) AS \"result\"",
+        "params": [
+          "public",
+          "promo",
+          "minimumOrderValue",
+          "integer"
+        ]
+      }
+    ],
+    "meta": {
+      "warning": "TABLE_REWRITE"
+    }
+  },
+  {
+    "id": "checkConstraint.verificationLink.verificationLink_type_check_c88c716f",
+    "label": "Add check constraint \"verificationLink_type_check_c88c716f\" on \"verificationLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "verificationLink_type_check_c88c716f",
+        "table": "verificationLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"verificationLink_type_check_c88c716f\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "verificationLink_type_check_c88c716f",
+          "public",
+          "\"public\".\"verificationLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"verificationLink_type_check_c88c716f\"",
+        "sql": "ALTER TABLE \"public\".\"verificationLink\" ADD CONSTRAINT \"verificationLink_type_check_c88c716f\" CHECK (\"type\" IN ('email_verification', 'password_reset'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"verificationLink_type_check_c88c716f\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "verificationLink_type_check_c88c716f",
+          "public",
+          "\"public\".\"verificationLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.verificationLink.verificationLink_token_key",
+    "label": "Add unique constraint on \"verificationLink\" (token)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "verificationLink_token_key",
+        "table": "verificationLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"verificationLink_token_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "verificationLink_token_key",
+          "public",
+          "\"public\".\"verificationLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"verificationLink_token_key\"",
+        "sql": "ALTER TABLE \"public\".\"verificationLink\" ADD CONSTRAINT \"verificationLink_token_key\" UNIQUE (\"token\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"verificationLink_token_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "verificationLink_token_key",
+          "public",
+          "\"public\".\"verificationLink\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.product.product_colors_gin_708d437b",
+    "label": "Create index \"product_colors_gin_708d437b\" on \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "product_colors_gin_708d437b",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"product_colors_gin_708d437b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_colors_gin_708d437b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"product_colors_gin_708d437b\"",
+        "sql": "CREATE INDEX \"product_colors_gin_708d437b\" ON \"public\".\"product\" USING \"gin\" (\"colors\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"product_colors_gin_708d437b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_colors_gin_708d437b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.product.product_sizes_gin_f1a51111",
+    "label": "Create index \"product_sizes_gin_f1a51111\" on \"product\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "product_sizes_gin_f1a51111",
+        "table": "product"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"product_sizes_gin_f1a51111\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_sizes_gin_f1a51111\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"product_sizes_gin_f1a51111\"",
+        "sql": "CREATE INDEX \"product_sizes_gin_f1a51111\" ON \"public\".\"product\" USING \"gin\" (\"sizes\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"product_sizes_gin_f1a51111\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_sizes_gin_f1a51111\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.productVariant.product_variant_unique_04a28d33",
+    "label": "Create index \"product_variant_unique_04a28d33\" on \"productVariant\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "product_variant_unique_04a28d33",
+        "table": "productVariant"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"product_variant_unique_04a28d33\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_variant_unique_04a28d33\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"product_variant_unique_04a28d33\"",
+        "sql": "CREATE UNIQUE INDEX \"product_variant_unique_04a28d33\" ON \"public\".\"productVariant\" (\"productId\", coalesce(color, ''), coalesce(size, ''))",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"product_variant_unique_04a28d33\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"product_variant_unique_04a28d33\""
+        ]
+      }
+    ]
+  }
+]

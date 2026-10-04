@@ -1,0 +1,650 @@
+[
+  {
+    "id": "table.cart",
+    "label": "Create table \"cart\"",
+    "summary": "Creates table \"cart\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "cart"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"cart\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cart\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"cart\"",
+        "sql": "CREATE TABLE \"public\".\"cart\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"userId\" uuid NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"cart\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cart\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.cartItem",
+    "label": "Create table \"cartItem\"",
+    "summary": "Creates table \"cartItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "cartItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"cartItem\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cartItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"cartItem\"",
+        "sql": "CREATE TABLE \"public\".\"cartItem\" (\n  \"cartId\" uuid NOT NULL,\n  \"color\" text,\n  \"id\" uuid NOT NULL,\n  \"image\" text,\n  \"productId\" uuid NOT NULL,\n  \"quantity\" int4 NOT NULL,\n  \"size\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"cartItem_size_check_f8fc34a7\" CHECK (\"size\" IN ('S', 'M', 'L', 'XL', 'XXL')),\n  CONSTRAINT \"cart_item_quantity_min_2a0d32c1\" CHECK (quantity >= 1)\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"cartItem\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cartItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.wishlist",
+    "label": "Create table \"wishlist\"",
+    "summary": "Creates table \"wishlist\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "wishlist"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"wishlist\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlist\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"wishlist\"",
+        "sql": "CREATE TABLE \"public\".\"wishlist\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" uuid NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"userId\" uuid NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"wishlist\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlist\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.wishlistProduct",
+    "label": "Create table \"wishlistProduct\"",
+    "summary": "Creates table \"wishlistProduct\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "wishlistProduct"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"wishlistProduct\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlistProduct\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"wishlistProduct\"",
+        "sql": "CREATE TABLE \"public\".\"wishlistProduct\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"productId\" uuid NOT NULL,\n  \"wishlistId\" uuid NOT NULL,\n  PRIMARY KEY (\"wishlistId\", \"productId\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"wishlistProduct\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlistProduct\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.cart.cart_userId_key",
+    "label": "Add unique constraint on \"cart\" (userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "cart_userId_key",
+        "table": "cart"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"cart_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cart_userId_key",
+          "public",
+          "\"public\".\"cart\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"cart_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"cart\" ADD CONSTRAINT \"cart_userId_key\" UNIQUE (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"cart_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cart_userId_key",
+          "public",
+          "\"public\".\"cart\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.wishlist.wishlist_userId_key",
+    "label": "Add unique constraint on \"wishlist\" (userId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "wishlist_userId_key",
+        "table": "wishlist"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"wishlist_userId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlist_userId_key",
+          "public",
+          "\"public\".\"wishlist\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"wishlist_userId_key\"",
+        "sql": "ALTER TABLE \"public\".\"wishlist\" ADD CONSTRAINT \"wishlist_userId_key\" UNIQUE (\"userId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"wishlist_userId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlist_userId_key",
+          "public",
+          "\"public\".\"wishlist\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.cartItem.cartItem_cartId_idx_79939295",
+    "label": "Create index \"cartItem_cartId_idx_79939295\" on \"cartItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "cartItem_cartId_idx_79939295",
+        "table": "cartItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"cartItem_cartId_idx_79939295\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cartItem_cartId_idx_79939295\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"cartItem_cartId_idx_79939295\"",
+        "sql": "CREATE INDEX \"cartItem_cartId_idx_79939295\" ON \"public\".\"cartItem\" (\"cartId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"cartItem_cartId_idx_79939295\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cartItem_cartId_idx_79939295\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.cartItem.cartItem_productId_idx_5858600a",
+    "label": "Create index \"cartItem_productId_idx_5858600a\" on \"cartItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "cartItem_productId_idx_5858600a",
+        "table": "cartItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"cartItem_productId_idx_5858600a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cartItem_productId_idx_5858600a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"cartItem_productId_idx_5858600a\"",
+        "sql": "CREATE INDEX \"cartItem_productId_idx_5858600a\" ON \"public\".\"cartItem\" (\"productId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"cartItem_productId_idx_5858600a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"cartItem_productId_idx_5858600a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.wishlistProduct.wishlistProduct_productId_idx_5858600a",
+    "label": "Create index \"wishlistProduct_productId_idx_5858600a\" on \"wishlistProduct\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "wishlistProduct_productId_idx_5858600a",
+        "table": "wishlistProduct"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"wishlistProduct_productId_idx_5858600a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlistProduct_productId_idx_5858600a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"wishlistProduct_productId_idx_5858600a\"",
+        "sql": "CREATE INDEX \"wishlistProduct_productId_idx_5858600a\" ON \"public\".\"wishlistProduct\" (\"productId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"wishlistProduct_productId_idx_5858600a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlistProduct_productId_idx_5858600a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.wishlistProduct.wishlistProduct_wishlistId_idx_52926058",
+    "label": "Create index \"wishlistProduct_wishlistId_idx_52926058\" on \"wishlistProduct\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "wishlistProduct_wishlistId_idx_52926058",
+        "table": "wishlistProduct"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"wishlistProduct_wishlistId_idx_52926058\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlistProduct_wishlistId_idx_52926058\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"wishlistProduct_wishlistId_idx_52926058\"",
+        "sql": "CREATE INDEX \"wishlistProduct_wishlistId_idx_52926058\" ON \"public\".\"wishlistProduct\" (\"wishlistId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"wishlistProduct_wishlistId_idx_52926058\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"wishlistProduct_wishlistId_idx_52926058\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.cart.cart_userId_fkey",
+    "label": "Add foreign key \"cart_userId_fkey\" on \"cart\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "cart_userId_fkey",
+        "table": "cart"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"cart_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cart_userId_fkey",
+          "public",
+          "\"public\".\"cart\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"cart_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"cart\"\nADD CONSTRAINT \"cart_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"cart_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cart_userId_fkey",
+          "public",
+          "\"public\".\"cart\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.cartItem.cartItem_productId_fkey",
+    "label": "Add foreign key \"cartItem_productId_fkey\" on \"cartItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "cartItem_productId_fkey",
+        "table": "cartItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"cartItem_productId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cartItem_productId_fkey",
+          "public",
+          "\"public\".\"cartItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"cartItem_productId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"cartItem\"\nADD CONSTRAINT \"cartItem_productId_fkey\"\nFOREIGN KEY (\"productId\")\nREFERENCES \"public\".\"product\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"cartItem_productId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cartItem_productId_fkey",
+          "public",
+          "\"public\".\"cartItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.cartItem.cartItem_cartId_fkey",
+    "label": "Add foreign key \"cartItem_cartId_fkey\" on \"cartItem\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "cartItem_cartId_fkey",
+        "table": "cartItem"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"cartItem_cartId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cartItem_cartId_fkey",
+          "public",
+          "\"public\".\"cartItem\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"cartItem_cartId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"cartItem\"\nADD CONSTRAINT \"cartItem_cartId_fkey\"\nFOREIGN KEY (\"cartId\")\nREFERENCES \"public\".\"cart\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"cartItem_cartId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "cartItem_cartId_fkey",
+          "public",
+          "\"public\".\"cartItem\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.wishlist.wishlist_userId_fkey",
+    "label": "Add foreign key \"wishlist_userId_fkey\" on \"wishlist\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "wishlist_userId_fkey",
+        "table": "wishlist"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"wishlist_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlist_userId_fkey",
+          "public",
+          "\"public\".\"wishlist\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"wishlist_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"wishlist\"\nADD CONSTRAINT \"wishlist_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"wishlist_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlist_userId_fkey",
+          "public",
+          "\"public\".\"wishlist\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.wishlistProduct.wishlistProduct_wishlistId_fkey",
+    "label": "Add foreign key \"wishlistProduct_wishlistId_fkey\" on \"wishlistProduct\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "wishlistProduct_wishlistId_fkey",
+        "table": "wishlistProduct"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"wishlistProduct_wishlistId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlistProduct_wishlistId_fkey",
+          "public",
+          "\"public\".\"wishlistProduct\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"wishlistProduct_wishlistId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"wishlistProduct\"\nADD CONSTRAINT \"wishlistProduct_wishlistId_fkey\"\nFOREIGN KEY (\"wishlistId\")\nREFERENCES \"public\".\"wishlist\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"wishlistProduct_wishlistId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlistProduct_wishlistId_fkey",
+          "public",
+          "\"public\".\"wishlistProduct\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.wishlistProduct.wishlistProduct_productId_fkey",
+    "label": "Add foreign key \"wishlistProduct_productId_fkey\" on \"wishlistProduct\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "wishlistProduct_productId_fkey",
+        "table": "wishlistProduct"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"wishlistProduct_productId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlistProduct_productId_fkey",
+          "public",
+          "\"public\".\"wishlistProduct\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"wishlistProduct_productId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"wishlistProduct\"\nADD CONSTRAINT \"wishlistProduct_productId_fkey\"\nFOREIGN KEY (\"productId\")\nREFERENCES \"public\".\"product\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"wishlistProduct_productId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "wishlistProduct_productId_fkey",
+          "public",
+          "\"public\".\"wishlistProduct\""
+        ]
+      }
+    ]
+  }
+]
