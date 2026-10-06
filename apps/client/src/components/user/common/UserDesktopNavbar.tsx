@@ -27,24 +27,21 @@ const UserDesktopNavbar = () => {
         <header className="header-class">
             <div className="shell">
                 <Link to="/" className="brand-wrap">
-                    <img src="/logo.png" alt="logo" className="h-10 w-34" />
+                    <img src="/logo.png" alt="ShopyMart" className="brand-logo" />
                 </Link>
-                <div className="desktop-collections-wrap">
-                    <NavTextLink
-                        href={collectionsPage.href}
-                        label={collectionsPage.label}
-                        icon={collectionsPage.icon}
-                    />
-                </div>
-
                 <div className="desktop-search-wrap">
                     <NavSearch />
                 </div>
 
                 <nav className="desktop-nav">
+                    <NavTextLink
+                        href={collectionsPage.href}
+                        label={collectionsPage.label}
+                        icon={collectionsPage.icon}
+                    />
                     {/* Count is pinned to the heart icon, not the end of the label, so it never
                         covers the text. */}
-                    <Link to="/wishlist" className="wishlist-link">
+                    <Link to="/wishlist" className="icon-link" aria-label="Wishlist">
                         <span className="wishlist-icon-wrap">
                             <HeartIcon className="h-4.5 w-4.5" />
                             {wishlistCount > 0 ? (

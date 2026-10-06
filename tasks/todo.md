@@ -44,3 +44,32 @@ Plan: `~/.claude/plans/cheerful-stargazing-plum.md`
 - `--affected` with a client-only change runs only client + its build deps, not auth-service.
 - Lint fails in `client` (existing errors) and is non-blocking in the workflow.
 - Not verified: the workflow on real GitHub runners (no `actionlint` available here); first PR will be the real test.
+
+# Storefront redesign (customer pages only)
+
+Inspiration: `inspiration/*.png`, `design-preferences/shop-style-reference.md`, `design-preferences/teepublic-style-reference.md`.
+
+Direction: Shop's soft canvas (mist page, white floating cards, pill controls, shadow instead of borders) + TeePublic's
+marketplace structure (pill category nav, chips, tinted bands, dark footer). One violet accent
+(#5433eb) and midnight ink (#151523) for text. Inter body, Geist display.
+
+Scope rule: every override lives in `src/storefront.css` under `html.storefront`, toggled by `UserLayout`, so the admin
+panel keeps its current look. The cursor rule is global (buttons, links, selects, tabs).
+
+- [x] A. Foundation: `storefront.css` tokens/fonts/primitives, `UserLayout` toggle, footer, global cursor rule
+- [x] B. Header: pill search with violet submit, round icon buttons, category pill row, mobile nav
+- [x] C. Home: hero, categories, coupons, new arrivals, trust band
+- [x] D. Collections + filters, product cards
+- [x] E. Product details
+- [x] F. Cart, checkout, wishlist, orders, account, auth modals
+- [x] G. Verify: typecheck, build, screenshots (desktop + 390px) against a mock backend
+
+## Review
+
+- Foundation, header, home, collections, product page, cart, checkout, wishlist, orders, account and the auth modal are restyled.
+  All overrides are in `src/storefront.css` under `html.storefront`, set by `UserLayout`, so the admin panel is unchanged.
+- New pieces: `CategoryPills`, `SiteFooter`, `HomeTrustBand`. Collections' "New Collections" eyebrow removed.
+- Cursor: one global rule (buttons, links, tabs, selects, menu items, checkboxes); disabled controls get `not-allowed`.
+  Checked in the browser: category pills, search button, product card link and image, login button all resolve to `pointer`.
+- Checked with a mock backend in headless Chromium at 1280px and 390px (no horizontal overflow after the pill-row width fix).
+- Not covered: Razorpay payment popup, order-success page, admin pages (deliberately untouched).

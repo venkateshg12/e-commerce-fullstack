@@ -26,7 +26,7 @@ const NavSearchForm = ({ initialTerm }: NavSearchFormProps) => {
         type="search"
         value={term}
         onChange={(event) => setTerm(event.target.value)}
-        placeholder="Search products"
+        placeholder="What are you shopping for today?"
         aria-label="Search products"
         className="nav-search-input"
       />

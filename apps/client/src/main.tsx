@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import QueryDevtools from "@/components/common/QueryDevtools";
 import ServerWakeNotice from "@/components/common/ServerWakeNotice";
 import "./App.css";
+import "./storefront.css";
 import "./store";
 import App from "./App.tsx";
 

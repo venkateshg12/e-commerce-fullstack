@@ -16,7 +16,6 @@ const HomeProductGrid = ({ products }: HomeProductGridProps) => {
     <section>
       <div className="home-section-head">
         <div>
-          <p className="home-section-eyebrow">Just in</p>
           <h2 className="home-section-title">New arrivals</h2>
         </div>
         <Link to="/collections" className="home-view-all">

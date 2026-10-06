@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import UserLayout from "./components/layout/UserLayout";
 import Home from "./pages/Home";
+import Collections from "./pages/Collections";
+import ProductDetails from "./pages/ProductDetails";
 import PublicRoute from "./components/auth/PublicRoute";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RoleGuardLayout from "./components/layout/RoleGuardLayout";
@@ -14,8 +16,6 @@ import {
     AdminOrders,
     AdminBanners,
     AdminSettings,
-    Collections,
-    ProductDetails,
     Account,
     Wishlist,
     Cart,

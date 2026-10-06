@@ -16,7 +16,6 @@ const HomeCategoryGrid = ({ categories }: HomeCategoryGridProps) => {
     <section>
       <div className="home-section-head">
         <div>
-          <p className="home-section-eyebrow">Categories</p>
           <h2 className="home-section-title">Browse by category</h2>
         </div>
         <Link to="/collections" className="home-view-all">

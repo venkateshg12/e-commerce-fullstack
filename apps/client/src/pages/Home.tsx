@@ -5,6 +5,7 @@ import HomeCategoryGrid from "@/components/user/home/HomeCategoryGrid";
 import HomeCouponGrid from "@/components/user/home/HomeCouponGrid";
 import HomeHero from "@/components/user/home/HomeHero";
 import HomeProductGrid from "@/components/user/home/HomeProductGrid";
+import HomeTrustBand from "@/components/user/home/HomeTrustBand";
 import { useGetCustomerCategories } from "@/hooks/collections/useGetCustomerCategories";
 import { useGetHomeFeed } from "@/hooks/home/useGetHomeFeed";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
@@ -86,6 +87,8 @@ const Home = ({ showAuth }: HomeProps) => {
         ) : products.length ? (
           <HomeProductGrid products={products} />
         ) : null}
+
+        <HomeTrustBand />
       </div>
 
       {showAuth ? (

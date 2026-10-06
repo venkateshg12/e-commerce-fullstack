@@ -30,8 +30,7 @@ const HomeCouponGrid = ({ coupons }: HomeCouponGridProps) => {
     <section>
       <div className="home-section-head">
         <div>
-          <p className="home-section-eyebrow">Offers</p>
-          <h2 className="home-section-title">Live coupons</h2>
+          <h2 className="home-section-title">Offers for you</h2>
         </div>
       </div>
 

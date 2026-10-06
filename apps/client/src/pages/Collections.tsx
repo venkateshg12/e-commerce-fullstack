@@ -122,8 +122,6 @@ const Collections = () => {
     <div className="collections-page-wrap">
       <section className="hero-section">
         <div className="hero-container">
-          <p className="hero-eyebrow">New Collections</p>
-
           <div className="hero-content">
             <div className="hero-title-wrap">
               <h1 className="hero-title">Premium everyday essentials</h1>
