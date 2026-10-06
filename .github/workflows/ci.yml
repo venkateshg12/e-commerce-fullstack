@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # `turbo --affected` diffs against the base branch, so it needs the history.
+          fetch-depth: 0
+
+      # Reads the version from "packageManager" in the root package.json.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # PRs check only what the change touches (and what depends on it); pushes to main check
+      # everything. postgres-service is an in-progress port and is left out until it settles.
+      - name: Build and typecheck
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            pnpm turbo run build typecheck --affected --filter='!postgres-service'
+          else
+            pnpm turbo run build typecheck --filter='!postgres-service'
+          fi
+
+      # Informational for now: the codebase has existing lint errors. Drop continue-on-error once
+      # they are fixed to make this a gate.
+      - name: Lint
+        continue-on-error: true
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            pnpm turbo run lint --affected --filter='!postgres-service' --continue
+          else
+            pnpm turbo run lint --filter='!postgres-service' --continue
+          fi

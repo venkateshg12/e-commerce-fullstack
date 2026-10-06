@@ -26,3 +26,21 @@ Root cause: `API` timeout is 15 s, `queryClient` has `retry: false`, so `/home` 
 - Found during testing: `AuthLoader`'s full-screen splash hid the skeletons for the whole wake. It now steps aside
   once the server is waking, and `ProtectedRoute`/`PublicRoute` show a skeleton instead of `null` until auth resolves.
 - Not done: a keep-alive pinger on the backend `/health` (host-side, user's call).
+
+# CI + stop redeploying both apps on every push
+
+Plan: `~/.claude/plans/cheerful-stargazing-plum.md`
+
+- [x] `.github/workflows/ci.yml` — build + typecheck (affected-only on PRs, full on main), lint non-blocking, postgres-service excluded
+- [x] `turbo.json` — `typecheck` depends on `^build` so `@repo/types` has a `dist` on a clean checkout
+- [ ] (you) Render: Build Filters → Included Paths `apps/backends/mongo/**`, `packages/types/**`, `pnpm-lock.yaml`, `package.json`, `pnpm-workspace.yaml`
+- [ ] (you) Vercel: enable "skip unchanged" or set Ignored Build Step (see plan)
+- [ ] (you) Optional: GitHub branch protection requiring the `ci` check
+
+## Review
+
+- Clean copy (no node_modules, dist or .env) with `pnpm install --frozen-lockfile`, then `turbo run build typecheck --filter='!postgres-service'`: 7/7 tasks pass, so no env vars are needed in CI.
+- Without the turbo.json change, `auth-service` typecheck fails on a clean tree (`Cannot find module '@repo/types'`) — confirmed.
+- `--affected` with a client-only change runs only client + its build deps, not auth-service.
+- Lint fails in `client` (existing errors) and is non-blocking in the workflow.
+- Not verified: the workflow on real GitHub runners (no `actionlint` available here); first PR will be the real test.
