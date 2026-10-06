@@ -4,15 +4,17 @@ import { createPortal } from "react-dom";
 
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
-  // Prevent scrolling on mount
+  // Freeze the page behind the modal. This has to be on <html>, not <body>: App.css gives <html>
+  // its own `overflow-y: scroll`, so a body overflow never reaches the viewport and the page kept
+  // scrolling. The scrollbar disappears, but `scrollbar-gutter: stable` keeps its space reserved,
+  // so nothing behind the modal shifts sideways.
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    if (!isOpen) return;
+    const root = document.documentElement;
+    const previousOverflow = root.style.overflow;
+    root.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = "";
+      root.style.overflow = previousOverflow;
     };
   }, [isOpen]);
 
