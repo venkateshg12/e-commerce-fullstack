@@ -43,7 +43,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
 
       {/* Modal Wrapper for centering and animation */}
       <div 
-        className="relative z-50 pointer-events-auto w-full max-w-md transform overflow-hidden rounded-xl bg-transparent shadow-2xl transition-all duration-300 ease-out animate-in fade-in zoom-in-95"
+        className="relative z-50 pointer-events-auto w-full max-w-md transform overflow-hidden rounded-xl bg-transparent transition-all duration-300 ease-out animate-in fade-in zoom-in-95"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Content */}
