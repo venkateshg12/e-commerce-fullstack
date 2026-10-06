@@ -1,21 +1,60 @@
 import axios, { AxiosError } from "axios";
 import { API_URL } from "@/constants/env";
 import { clearUserQueries } from "@/lib/queryClient";
+import { isServerUnavailable } from "@/lib/serverStatus";
 import { useAuthStore } from "@/store/auth.store";
+import { useServerStore } from "@/store/server.store";
 import type { ApiError, RetryableRequestConfig, QueueItem } from "@/types";
 
+// A free-tier backend can take up to a minute to boot, so a request must outlast that.
+const REQUEST_TIMEOUT_MS = 60_000;
+// A request still pending after this long is probably waiting on a sleeping server.
+const WAKE_NOTICE_DELAY_MS = 3_000;
+// A server that answered this recently is awake, so a slow request is just a slow request.
+const AWAKE_WINDOW_MS = 2 * 60 * 1000;
+
+let lastAnswerAt = 0;
 
 const API = axios.create({
   baseURL: API_URL,
   withCredentials: true,
-  timeout: 15000,
+  timeout: REQUEST_TIMEOUT_MS,
 });
 
 
 const refreshClient = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  timeout: REQUEST_TIMEOUT_MS,
 });
+
+const hasAnsweredRecently = () => Date.now() - lastAnswerAt < AWAKE_WINDOW_MS;
+
+API.interceptors.request.use((config) => {
+  const request = config as RetryableRequestConfig;
+  clearTimeout(request._wakeTimer);
+  if (!hasAnsweredRecently()) {
+    request._wakeTimer = setTimeout(
+      () => useServerStore.getState().markWaking(),
+      WAKE_NOTICE_DELAY_MS
+    );
+  }
+  return config;
+});
+
+// A real answer from the app (not the host's "still booting" page) means the server is awake.
+const noteServerAnswered = (config?: RetryableRequestConfig) => {
+  clearTimeout(config?._wakeTimer);
+  lastAnswerAt = Date.now();
+  useServerStore.getState().markReady();
+};
+
+// No answer, or the proxy's gateway error: the server isn't up yet. Offline is the user's own
+// connection, not a sleeping server, so it doesn't raise the notice.
+const noteServerUnavailable = (config?: RetryableRequestConfig) => {
+  clearTimeout(config?._wakeTimer);
+  if (navigator.onLine) useServerStore.getState().markWaking();
+};
 
 //Refresh-queue state
 
@@ -42,10 +81,16 @@ const isAuthRoute = (url?: string): boolean =>
   !!url && AUTH_ROUTES.some((route) => url.includes(route));
 
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    noteServerAnswered(response.config as RetryableRequestConfig);
+    return response;
+  },
   async (error: AxiosError<ApiError>) => {
+    const config = error.config as RetryableRequestConfig | undefined;
+
     // No response at all = network/timeout error, not an HTTP error.
     if (!error.response) {
+      noteServerUnavailable(config);
       return Promise.reject<ApiError>({
         status: 0,
         message: "Network error. Please check your internet connection.",
@@ -53,7 +98,12 @@ API.interceptors.response.use(
     }
 
     const { status, data } = error.response;
-    const config = error.config as RetryableRequestConfig | undefined;
+
+    if (isServerUnavailable(status)) {
+      noteServerUnavailable(config);
+    } else {
+      noteServerAnswered(config);
+    }
 
     const shouldAttemptRefresh =
       status === 401 && config && !isAuthRoute(config.url) && !config._retry;

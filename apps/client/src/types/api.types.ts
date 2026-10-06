@@ -70,6 +70,8 @@ export type ApiEnvelope<T> =
 
 export interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  // The pending "server is waking up" timer for this request, cleared when it settles.
+  _wakeTimer?: ReturnType<typeof setTimeout>;
 }
 
 export interface QueueItem {
