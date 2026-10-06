@@ -190,9 +190,6 @@ A custom limiter, not a library (`utils/rateLimiter/`, wired in by `middleware/r
 - **Responses** carry `X-RateLimit-*` and `Retry-After`; 429 bodies use the standard envelope.
 - **Fallback.** A circuit breaker (opens after 10 consecutive failures, probes again after 30 s with a single half-open request) switches to an in-memory store (capped at 20,000 keys, swept every minute). Redis commands use short timeouts so the breaker trips quickly. While it is open, limits apply per instance instead of globally.
 
-There are 19 configured limiters in total. Diagrams: [`architecture_images/`](architecture_images/) (request flow, sliding window, algorithms, circuit breaker, client identity).
-
-![Rate limiting request flow](architecture_images/redis_ratelimiter_02_request_flow.png)
 
 ## 🗄️ Database
 
