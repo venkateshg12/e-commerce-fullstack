@@ -73,3 +73,7 @@ storybook-static/
 /.skills/
 /.claude/
 /CLAUDE.md
+
+# Design references (local only)
+/design-preferences/
+/inspiration/
