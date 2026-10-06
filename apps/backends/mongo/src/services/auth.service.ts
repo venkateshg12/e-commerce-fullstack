@@ -309,7 +309,10 @@ export const resendVerificationEmail = async (email: string) => {
     return { message: GENERIC_RESEND_MESSAGE };
 }
 
-export const updateProfileService = async (userId: string | Types.ObjectId,     ) => {
+export const updateProfileService = async (
+    userId: string | Types.ObjectId,
+    data: UpdateProfileSchema
+) => {
     const user = await UserModel.findById(userId);
     appAssert(user, NOT_FOUND, "User not found");
 
@@ -317,7 +320,7 @@ export const updateProfileService = async (userId: string | Types.ObjectId,     
     await user.save();
 
     return user.omitPassword();
-}
+};
 
 export const updateAvatarService = async (userId: string | Types.ObjectId, fileBuffer: Buffer) => {
     const user = await UserModel.findById(userId);
