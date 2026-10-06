@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
+import RouteFallback from "../common/RouteFallback";
 import AdminMobileNav from "../admin/common/AdminMobileNav";
 import AdminSidebar from "../admin/common/AdminSidebar";
 import UserAvatarMenu from "../common/UserAvatarMenu";
@@ -19,7 +21,9 @@ const AdminLayout = () => {
           </div>
         </header>
         <main className="flex-1 p-3 sm:p-4 lg:p-6">
+          <Suspense fallback={<RouteFallback />}>
           <Outlet />
+        </Suspense>
         </main>
       </div>
     </div>

@@ -1,7 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useGetProfile } from "@/hooks/auth/useGetProfile";
 import { clearUserQueries } from "@/lib/queryClient";
 import { useAuthStore } from "@/store/auth.store";
+import { useServerStore } from "@/store/server.store";
 
 interface AuthLoaderProps {
   children: React.ReactNode;
@@ -13,6 +14,13 @@ const AuthLoader: React.FC<AuthLoaderProps> = ({ children }) => {
   const setUser = useAuthStore((state) => state.setUser);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
+  const isServerWaking = useServerStore((state) => state.status === "waking");
+
+  // The splash covers the whole page, which is right for a second or two but not for the minute a
+  // sleeping server can take: the storefront's skeletons and the wake-up notice should be visible
+  // instead. Once revealed it stays revealed, so the page never unmounts back to the splash.
+  const [isRevealed, setIsRevealed] = useState(false);
+  if (isServerWaking && !isRevealed) setIsRevealed(true);
 
 
   useEffect(() => {
@@ -31,7 +39,7 @@ const AuthLoader: React.FC<AuthLoaderProps> = ({ children }) => {
     }
   }, [isSuccess, isError, data, setUser, clearAuth]);
 
-  if (!isBootstrapped && isLoading) {
+  if (!isBootstrapped && isLoading && !isRevealed) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-white text-zinc-900 z-9999 p-6 text-center select-none overflow-hidden transition-opacity duration-1000">
         <div className="relative mb-12 h-32 w-32 flex items-center justify-center scale-90 md:scale-100">

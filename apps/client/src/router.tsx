@@ -2,25 +2,29 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import UserLayout from "./components/layout/UserLayout";
 import Home from "./pages/Home";
 import PublicRoute from "./components/auth/PublicRoute";
-import VerifyEmail from "./pages/auth/VerifyEmail";
-import ResetPassword from "./pages/auth/ResetPassword";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import RoleGuardLayout from "./components/layout/RoleGuardLayout";
 import AdminLayout from "./components/layout/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminPromo from "./pages/admin/AdminPromo";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminBanners from "./pages/admin/AdminBanners";
-import AdminSettings from "./pages/admin/AdminSettings";
-import Collections from "./pages/Collections";
-import ProductDetails from "./pages/ProductDetails";
-import Account from "./pages/Account";
-import Wishlist from "./pages/Wishlist";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import OrderSuccess from "./pages/OrderSuccess";
-import Orders from "./pages/Orders";
+import {
+    VerifyEmail,
+    ResetPassword,
+    AdminDashboard,
+    AdminProducts,
+    AdminPromo,
+    AdminOrders,
+    AdminBanners,
+    AdminSettings,
+    Collections,
+    ProductDetails,
+    Account,
+    Wishlist,
+    Cart,
+    Checkout,
+    OrderSuccess,
+    Orders,
+} from "./pages/lazyPages";
+
+
 
 
 export const router = createBrowserRouter([

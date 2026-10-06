@@ -1,4 +1,5 @@
 import React from "react";
+import RouteFallback from "@/components/common/RouteFallback";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -8,7 +9,7 @@ const ProtectedRoute: React.FC = () => {
   const location = useLocation();
 
   if (!isBootstrapped) {
-    return null;
+    return <RouteFallback />;
   }
 
   if (!user) {

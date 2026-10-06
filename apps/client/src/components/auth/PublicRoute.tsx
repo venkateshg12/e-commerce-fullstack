@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import RouteFallback from "@/components/common/RouteFallback";
 import { useAuthStore } from "@/store/auth.store";
 
 const PublicRoute = () => {
@@ -7,7 +8,7 @@ const PublicRoute = () => {
   const location = useLocation();
 
   if (!isBootstrapped) {
-    return null;
+    return <RouteFallback />;
   }
 
   if (user) {
