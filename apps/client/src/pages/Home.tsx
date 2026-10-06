@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Modal } from "@/components/ui/modal";
 import HomeCategoryGrid from "@/components/user/home/HomeCategoryGrid";
@@ -26,7 +27,7 @@ const Home = ({ showAuth }: HomeProps) => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
-  const { data, isPending } = useGetHomeFeed();
+  const { data, isPending, isError, refetch, isRefetching } = useGetHomeFeed();
   // Categories come from GET /categories, not the feed: that's the cache entry every admin
   // category/type edit invalidates, so changes appear here immediately. It also carries each
   // category's types.
@@ -71,6 +72,16 @@ const Home = ({ showAuth }: HomeProps) => {
             {Array.from({ length: 4 }).map((_, index) => (
               <Skeleton key={`product-skeleton-${index}`} className="aspect-3/4 w-full rounded-lg" />
             ))}
+          </div>
+        ) : isError ? (
+          // Only reached once the retries for a sleeping server have run out.
+          <div className="home-feed-error" role="alert">
+            <p className="home-feed-error-text">
+              We couldn't load the latest products. Please check your connection and try again.
+            </p>
+            <Button type="button" onClick={() => refetch()} disabled={isRefetching}>
+              {isRefetching ? "Retrying…" : "Try again"}
+            </Button>
           </div>
         ) : products.length ? (
           <HomeProductGrid products={products} />

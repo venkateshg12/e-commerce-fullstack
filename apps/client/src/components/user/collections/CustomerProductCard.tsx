@@ -1,4 +1,5 @@
 import { formatDiscount } from "@/lib/price";
+import LazyImage from "@/components/common/LazyImage";
 import { getTotalStock } from "@/lib/variants";
 import { Link } from "react-router-dom";
 import { ImageIcon } from "lucide-react";
@@ -37,11 +38,10 @@ const CustomerProductCard = ({ product }: CustomerProductCardProps) => {
       <Link to={`/collections/${product._id}`}>
         <div className="product-card-media">
           {coverUrl ? (
-            <img
+            <LazyImage
               src={coverUrl}
               alt={product.title}
               className="product-card-image"
-              loading="lazy"
             />
           ) : (
             <div className="product-card-image-fallback">

@@ -1,4 +1,5 @@
 import { formatDiscount } from "@/lib/price";
+import LazyImage from "@/components/common/LazyImage";
 import { Link } from "react-router-dom";
 import { Heart, ImageIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -54,11 +55,10 @@ const WishlistItemCard = ({
       <div className="product-card-media">
         <Link to={`/collections/${item.productId}`}>
           {item.image ? (
-            <img
+            <LazyImage
               src={item.image}
               alt={item.title}
               className="product-card-image"
-              loading="lazy"
             />
           ) : (
             <div className="product-card-image-fallback">

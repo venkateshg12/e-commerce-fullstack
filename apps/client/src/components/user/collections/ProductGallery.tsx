@@ -1,4 +1,5 @@
 import { ImageIcon } from "lucide-react";
+import LazyImage from "@/components/common/LazyImage";
 import { cn } from "@/lib/utils";
 import type { ProductImage } from "@/types";
 
@@ -51,18 +52,19 @@ const ProductGallery = ({
                 index === safeIndex && "gallery-thumb-active"
               )}
             >
-              <img src={image.url} alt="" className="gallery-thumb-image" />
+              <LazyImage src={image.url} alt="" className="gallery-thumb-image" />
             </button>
           ))}
         </div>
       ) : null}
 
       <div className="gallery-stage">
-        <img
+        <LazyImage
           key={activeImage.url}
           src={activeImage.url}
           alt={title}
           className="gallery-stage-image"
+          priority
         />
       </div>
     </div>

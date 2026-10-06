@@ -1,4 +1,5 @@
 import { formatDiscount } from "@/lib/price";
+import LazyImage from "@/components/common/LazyImage";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { COLOR_MAP } from "@/constants/constant";
@@ -42,7 +43,7 @@ const CartItemGroup = ({
     <Card className="cart-group">
       <Link to={`/collections/${group.productId}`} className="cart-group-media">
         {group.image ? (
-          <img src={group.image} alt={group.title} className="cart-line-image" loading="lazy" />
+          <LazyImage src={group.image} alt={group.title} className="cart-line-image" />
         ) : (
           <div className="cart-line-image-fallback">
             <ImageIcon className="h-6 w-6" />

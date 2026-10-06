@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import LazyImage from "@/components/common/LazyImage";
 import { cn } from "@/lib/utils";
 import type { HomeBanner } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -114,13 +115,13 @@ const HomeHero = ({ banners, isSignedIn }: HomeHeroProps) => {
             // Stops the browser's native link-drag from hijacking a mouse swipe.
             draggable={false}
           >
-            <img
+            <LazyImage
               src={banner.imageUrl}
               alt="Featured collection"
               className="home-carousel-image"
               draggable={false}
               // The first slide is the first thing on screen; the rest can wait.
-              {...(slideIndex === 0 ? { fetchPriority: "high" as const } : { loading: "lazy" as const })}
+              priority={slideIndex === 0}
             />
           </Link>
         ))}

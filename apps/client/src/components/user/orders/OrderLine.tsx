@@ -1,4 +1,5 @@
 import { COLOR_MAP } from "@/constants/constant";
+import LazyImage from "@/components/common/LazyImage";
 import type { OrderItem } from "@/types";
 import { ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -9,7 +10,7 @@ const OrderLine = ({ item }: { item: OrderItem }) => {
   const isAvailable = item.productId !== null && item.title !== null;
 
   const thumbnail = item.image ? (
-    <img src={item.image} alt={item.title ?? "Product"} className="order-item-image" loading="lazy" />
+    <LazyImage src={item.image} alt={item.title ?? "Product"} className="order-item-image" />
   ) : (
     <div className="order-item-image-fallback">
       <ImageIcon className="h-5 w-5" />

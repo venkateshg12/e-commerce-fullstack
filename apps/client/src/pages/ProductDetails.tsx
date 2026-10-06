@@ -1,4 +1,5 @@
 import { formatDiscount } from "@/lib/price";
+import LazyImage from "@/components/common/LazyImage";
 import { getTotalStock, getVariantStock, isColorAvailable } from "@/lib/variants";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -436,10 +437,9 @@ const ProductDetailsView = ({ id }: { id?: string }) => {
                             : null
                         )}
                       >
-                        <img
+                        <LazyImage
                           src={image.url}
                           alt=""
-                          loading="lazy"
                           className="pdp-more-colors-image"
                         />
                         {/* Only mapped photos get a dot, so it's clear which still need one. */}

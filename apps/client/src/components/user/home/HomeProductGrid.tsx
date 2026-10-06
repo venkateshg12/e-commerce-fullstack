@@ -1,4 +1,5 @@
 import { formatDiscount } from "@/lib/price";
+import LazyImage from "@/components/common/LazyImage";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import type { HomeProduct } from "@/types";
@@ -34,11 +35,10 @@ const HomeProductGrid = ({ products }: HomeProductGridProps) => {
               <Link to={`/collections/${product._id}`}>
                 <div className="product-card-media">
                   {product.image ? (
-                    <img
+                    <LazyImage
                       src={product.image}
                       alt={product.title}
                       className="product-card-image"
-                      loading="lazy"
                     />
                   ) : (
                     <div className="product-card-image-fallback">
