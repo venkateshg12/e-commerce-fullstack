@@ -2,8 +2,8 @@ import { QueryClient } from "@tanstack/react-query";
 import { isServerUnavailable } from "@/lib/serverStatus";
 import { useServerStore } from "@/store/server.store";
 
-// About a minute of patience in total — enough for a free-tier backend to finish booting.
-const MAX_WAKE_RETRIES = 12;
+// About two minutes of patience in total — enough for a slow free-tier cold start with margin.
+const MAX_WAKE_RETRIES = 24;
 
 const queryClient = new QueryClient({
     defaultOptions: {
