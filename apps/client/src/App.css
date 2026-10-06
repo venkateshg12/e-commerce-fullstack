@@ -45,6 +45,7 @@
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
+  --color-skeleton: var(--skeleton);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
@@ -77,6 +78,9 @@
   --secondary-foreground: oklch(0.21 0.006 285.885);
   --muted: oklch(0.967 0.001 286.375);
   --muted-foreground: oklch(0.552 0.016 285.938);
+  /* Placeholder grey for skeletons and unloaded images — darker than --muted, which is nearly the
+     page colour and made loading screens read as blank white. */
+  --skeleton: oklch(0.9 0.005 286.32);
   --accent: oklch(0.967 0.001 286.375);
   --accent-foreground: oklch(0.21 0.006 285.885);
   --destructive: oklch(0.577 0.245 27.325);
@@ -118,6 +122,7 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.274 0.006 286.033);
   --muted-foreground: oklch(0.705 0.015 286.067);
+  --skeleton: oklch(0.32 0.006 286.033);
   --accent: oklch(0.274 0.006 286.033);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
@@ -234,6 +239,28 @@
 
 /* Opacity only — the old 102% → 100% scale read as a zoom on every photo swap. */
 @keyframes gallery-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes server-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lazy-image-in {
   from {
     opacity: 0;
   }
@@ -1073,7 +1100,7 @@
 
   /* 3:4 — the shape of the catalogue's photos, used for every product image on the site. */
   .product-card-media {
-    @apply relative aspect-3/4 w-full -mt-5 overflow-hidden bg-muted;
+    @apply relative aspect-3/4 w-full -mt-5 overflow-hidden bg-skeleton;
   }
 
   .product-card-image {
@@ -2970,6 +2997,68 @@
   /* The admin nav in a drawer, for widths where the rail is hidden. */
   .admin-mobile-sheet {
     @apply flex w-[280px] max-w-[85vw] flex-col border-r border-sidebar-border bg-sidebar p-0;
+  }
+
+  /* "Server is waking up" notice — bottom-right card, full width on phones. */
+  .server-notice {
+    @apply fixed inset-x-3 bottom-3 z-10000 flex items-start gap-3 rounded-xl border border-border bg-card p-4 text-card-foreground shadow-xl sm:inset-x-auto sm:bottom-5 sm:right-5 sm:w-96;
+    animation: server-notice-in 0.3s ease-out;
+  }
+
+  .server-notice-icon {
+    @apply mt-0.5 h-5 w-5 shrink-0 text-primary;
+  }
+
+  .server-notice-icon-spin {
+    @apply animate-spin;
+  }
+
+  .server-notice-icon-ready {
+    @apply text-emerald-500;
+  }
+
+  .server-notice-title {
+    @apply text-sm font-semibold;
+  }
+
+  .server-notice-text {
+    @apply mt-1 text-xs leading-relaxed text-muted-foreground;
+  }
+
+  .server-notice-track {
+    @apply mt-3 h-1 w-full overflow-hidden rounded-full bg-skeleton;
+  }
+
+  .server-notice-bar {
+    @apply h-full w-full rounded-full bg-primary/60;
+    animation: loader 1.6s ease-in-out infinite;
+  }
+
+  /* An image shows its grey placeholder (the img's own background) until it has loaded, then fades in. */
+  .lazy-image-loading {
+    @apply animate-pulse bg-skeleton text-transparent;
+  }
+
+  .lazy-image-loaded {
+    animation: lazy-image-in 0.4s ease-out;
+  }
+
+  .lazy-image-fallback {
+    @apply flex items-center justify-center bg-skeleton text-muted-foreground;
+  }
+
+  /* Home feed failed even after retrying. */
+  .home-feed-error {
+    @apply mx-auto flex max-w-md flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-8 text-center;
+  }
+
+  .home-feed-error-text {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Suspense fallback while a lazy route's code downloads. */
+  .route-fallback {
+    @apply mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 sm:p-6;
   }
 }
 
