@@ -1,13 +1,13 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 
-/**
- * Whether the backend is answering. The free tier sleeps when idle and takes up to a minute to boot,
- * so the first requests of a visit can hang or be turned away by the host's proxy.
- *
- * - `idle`   — nothing to report; the server is answering normally.
- * - `waking` — a request is taking too long or was turned away; the wake-up notice is showing.
- * - `ready`  — the server answered after `waking`; the notice says so, then returns to `idle`.
+/*
+  Whether the backend is answering. The free tier sleeps when idle and takes up to a minute to boot,
+  so the first requests of a visit can hang or be turned away by the host's proxy.
+ 
+  - `idle`   — nothing to report; the server is answering normally.
+ - `waking` — a request is taking too long or was turned away; the wake-up notice is showing.
+  - `ready`  — the server answered after `waking`; the notice says so, then returns to `idle`.
  */
 export type ServerStatus = "idle" | "waking" | "ready";
 

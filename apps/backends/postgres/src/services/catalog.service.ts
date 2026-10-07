@@ -1,5 +1,5 @@
 import z from "zod";
-import { BrandSchema, CategorySchema, SubCategorySchema } from "@repo/types";
+import { BrandSchema, CategorySchema, SubCategorySchema, UpdateSubCategorySchema } from "@repo/types";
 import { orm, pool } from "../prisma/db";
 import { BAD_REQUEST, CONFLICT, NOT_FOUND } from "../constants/http";
 import appAssert from "../utils/errors/appAssert";
@@ -240,4 +240,41 @@ export const createSubCategoryService = async ({ name, category }: SubCategorySc
         appAssert(!isDuplicateKeyError(error), CONFLICT, "This category already has a type with that name");
         throw error;
     }
+};
+
+
+export const updateSubCategoryService = async (
+    subCategoryId: string,
+    { name }: UpdateSubCategorySchema
+) => {
+    appAssert(isUuid(subCategoryId), BAD_REQUEST, "Invalid type ID");
+
+    /*
+      One UPDATE instead of find → duplicate check → save.
+      The unique index on ("categoryId", lower(name)) rejects duplicate names
+      under the same category atomically (SQLSTATE 23505), while update() returns null
+      if the subcategory doesn't exist.
+     */
+    const updated = await withDuplicateGuard("This category already has a type with that name", () =>
+        orm.SubCategory
+            .where({ id: subCategoryId })
+            .update({ name, updatedAt: new Date().toISOString() })
+    );
+    appAssert(updated, NOT_FOUND, "Type not found");
+
+    // Phase 08 (cache): bump "catalog" and "products", and invalidate cached detail pages.
+    return updated;
+};
+
+export const deleteSubCategoryService = async (subCategoryId: string) => {
+    appAssert(isUuid(subCategoryId), BAD_REQUEST, "Invalid type ID");
+
+    // delete() returns the deleted row, or null if there was no such type.
+    const deleted = await withReferenceGuard("subCategoryId", subCategoryId, () =>
+        orm.SubCategory.where({ id: subCategoryId }).delete()
+    );
+    appAssert(deleted, NOT_FOUND, "Type not found");
+
+    // Phase 08 (cache): bump "catalog".
+    return { id: subCategoryId };
 };

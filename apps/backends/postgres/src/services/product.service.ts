@@ -5,6 +5,7 @@ import { BAD_REQUEST, NOT_FOUND } from "../constants/http";
 import { db, orm, pool } from "../prisma/db";
 import { ProductSize, ProductVariant } from "../types/product.types";
 import { getVariantKey } from "../utils/variants";
+import { addDeleteCloudinaryAssetsJob, addProcessProductImageJob } from "../jobs/producers/image.producer";
 
 // Ids are uuid columns: a malformed one would make Postgres throw (a 500) instead of a clean 400.
 const isUuid = (value: string) => z.string().uuid().safeParse(value).success;
@@ -175,6 +176,16 @@ export const uploadProductImagesService = async (
     }));
 
     // Phase 05 (jobs): enqueue the image-processing job here with `files`, `imageColors` and
+
+    try {
+        await addProcessProductImageJob({
+            productId,
+            files: filePayloads,
+            position,
+        });
+    } catch (queueError) {
+        await orm.Product.where({ id: productId }).update({ uploadStatus: "FAILED", uploadError: "Upload failed" });
+    }
     // `position`, marking the product FAILED if the job can't be scheduled.
     // Phase 08 (cache): invalidate this product's detail entry and bump "products".
     return updatedProduct;
@@ -235,6 +246,10 @@ export const deleteProductImagesService = async (
     });
 
     // Phase 05 (jobs): enqueue the Cloudinary asset deletion for imagesToDelete' publicIds here.
+    await addDeleteCloudinaryAssetsJob({
+        productId,
+        publicIds: imagesToDelete.map((img) => img.publicId),
+    });
     // Phase 08 (cache): invalidate this product's detail entry and bump "products".
     return findProductWithRelations(productId);
 }
@@ -401,6 +416,11 @@ export const deleteProductService = async (productId: string) => {
     appAssert(isUuid(productId), BAD_REQUEST, "Invalid product ID");
 
     // Phase 05 (jobs): read this product's image publicIds HERE, before the delete below cascades
+    const images = await orm.ProductImage
+        .where({ productId })
+        .select("publicId")
+        .all();
+    const publicIds = images.map((img) => img.publicId).filter(Boolean);
     // away its image rows, and enqueue their Cloudinary deletion after it.
 
     /*
@@ -410,6 +430,10 @@ export const deleteProductService = async (productId: string) => {
      */
     const deletedProduct = await orm.Product.where({ id: productId }).delete();
     appAssert(deletedProduct, NOT_FOUND, "Product not found");
+
+    if (publicIds.length) {
+        await addDeleteCloudinaryAssetsJob({ productId, publicIds });
+    }
 
     // Phase 08 (cache): invalidate this product's detail entry and bump "products" and "facets"
     // (its colours may have been the last of their kind).

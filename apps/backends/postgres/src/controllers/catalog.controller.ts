@@ -1,8 +1,8 @@
 import { CREATED, OK } from "../constants/http";
 import { ok } from "../utils/api/apiEnvelope";
 import { catchError } from "../utils/errors/catchError";
-import { createBrandService, deleteBrandService, deleteCategoryService, getBrandsService, updateBrandService, createSubCategoryService } from "../services/catalog.service";
-import { brandSchema, subCategorySchema } from "@repo/types";
+import { createBrandService, deleteBrandService, deleteCategoryService, getBrandsService, updateBrandService, createSubCategoryService, updateSubCategoryService, deleteSubCategoryService } from "../services/catalog.service";
+import { brandSchema, subCategorySchema, updateSubCategorySchema } from "@repo/types";
 
 
 export const getBrandsHandler = catchError(
@@ -54,5 +54,21 @@ export const createSubCategoryHandler = catchError(
         const data = subCategorySchema.parse(req.body);
         const subCategory = await createSubCategoryService(data);
         return res.status(CREATED).json(ok(subCategory));
+    }
+);
+
+export const updateSubCategoryHandler = catchError(
+    async (req, res) => {
+        const data = updateSubCategorySchema.parse(req.body);
+        const subCategory = await updateSubCategoryService(req.params.id as string, data);
+        return res.status(OK).json(ok(subCategory));
+    }
+);
+
+
+export const deleteSubCategoryHandler = catchError(
+    async (req, res) => {
+        const result = await deleteSubCategoryService(req.params.id as string);
+        return res.status(OK).json(ok(result));
     }
 );

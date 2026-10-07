@@ -14,6 +14,7 @@ import { RefreshTokenPayload } from "../types/auth.types";
 import { appErrorCode } from "../constants/appErrorCode";
 import { uploadSingleBuffersToCloudinary } from "../utils/cloudinary";
 import { CLIENT_URL, NODE_ENV } from "../constants/env";
+import { EmailProducer } from "../jobs/producers/email.producer";
 
 
 const dummyPasswordHash = hashValue(crypto.randomBytes(32).toString("hex"));
@@ -42,11 +43,8 @@ const issueEmailVerificationLink = async (user: Pick<Models.public_User, "id" | 
         expiresAt: tenMinutesFromNow().toISOString(),
     });
 
-    // TODO: Dispatch verify email job once email producer/worker queue is ported from Mongo
-    // await EmailProducer.sendVerifyMail({ userId: user.id, email: user.email, verificationToken: token });
+    await EmailProducer.sendVerifyMail({ userId: user.id, email: user.email, verificationToken: token });
 
-    // Until the email queue exists (phase 05) the log is the only place the raw token appears.
-    // Development only: in production this would leak a working account link into the logs.
     if (NODE_ENV === "development") {
         console.log(`[dev] verify link for ${user.email}: ${CLIENT_URL}/auth/verify/${token}`);
     }
@@ -294,8 +292,8 @@ export const sendResetPasswordEmail = async (email: string) => {
         expiresAt: tenMinutesFromNow().toISOString(),
     });
 
-    // TODO: Dispatch reset password email job once email producer/worker queue is ported from Mongo
-    // await EmailProducer.sendPasswordReset({ userId: user.id, email: user.email, resetToken: token });
+    
+    await EmailProducer.sendPasswordReset({ userId: user.id, email: user.email, resetToken: token });
 
     if (NODE_ENV === "development") {
         console.log(`[dev] reset link for ${user.email}: ${CLIENT_URL}/password/reset/${token}`);

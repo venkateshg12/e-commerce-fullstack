@@ -2,7 +2,7 @@ import { Job, UnrecoverableError } from "bullmq";
 import { z } from "zod";
 import { PasswordResetPayload, VerifyEmailPayload } from "../interfaces/jobPayload";
 import { getPasswordResetEmail, getVerificationEmail, sendMail } from "../../utils/email";
-import UserModel from "../../models/user.model";
+import { orm } from "../../prisma/db";
 
 const verifyEmailPayloadSchema = z.object({
     userId: z.string().min(1, "User ID is required"),
@@ -26,7 +26,7 @@ export async function processVerifyEmail(job: Job<VerifyEmailPayload>) {
     job.log(`[Start] Sending Verification Email to ${email} (User ID: ${userId})`);
 
     // Check if user exists and if already verified (Idempotency check)
-    const user = await UserModel.findById(userId);
+    const user = await orm.User.where({ id: userId }).select("id", "verified").first();
     if (!user) {
         job.log(`[VerifyEmail] User ${userId} no longer exists. Aborting.`);
         return { status: 'skipped', reason: 'User not found' };
@@ -64,7 +64,7 @@ export async function processPasswordReset(job: Job<PasswordResetPayload>) {
     job.log(`[Start] Sending Password Reset Email to ${email} (User ID: ${userId})`);
 
     // Check if user exists
-    const user = await UserModel.findById(userId);
+    const user = await orm.User.where({ id: userId }).select("id", "verified").first();
     if (!user) {
         job.log(`[PasswordReset] User ${userId} no longer exists. Aborting.`);
         return { status: 'skipped', reason: 'User not found' };
