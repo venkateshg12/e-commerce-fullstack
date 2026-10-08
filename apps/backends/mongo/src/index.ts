@@ -21,6 +21,7 @@ import { notFound } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 import { connectDB } from "./config/db";
 import { authRoutes } from "./routes/auth.route";
+import { gmailRoutes } from "./routes/gmail.route";
 import cookieParser from "cookie-parser";
 import { visitorIdMiddleware } from "./middleware/visitorId";
 import { globalLimiter } from "./config/rateLimiter";
@@ -213,6 +214,8 @@ async function main() {
 
     // Routes declaration.
     app.use("/auth", authRoutes);
+    // The path is fixed by the redirect URI registered with Google (/api/auth/gmail/callback).
+    app.use("/api/auth/gmail", gmailRoutes);
     app.use("/session", sessionRoutes);
     app.use("/", homeRouter);
     app.use("/", productRoutes);
