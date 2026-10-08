@@ -154,7 +154,7 @@ export default function VerifyEmail() {
                                                  Email Sent
                                             </p>
                                             <p className="mt-1 font-medium">
-                                                {resendData?.data?.message || "A new verification link has been sent to your inbox."}
+                                                {resendData?.data?.message || "A new verification link has been sent to your inbox. Please check your spam folder too."}
                                             </p>
                                         </>
                                     ) : (

@@ -49,7 +49,7 @@ const Signup = () => {
                     isOpen: true,
                     type: "info",
                     title: response?.data?.title || "Registration Successfull",
-                    description: response?.data?.message ||  "check the email"
+                    description: response?.data?.message || "Check your email, and your spam folder too."
                 })
             },
             onError: (error) => {
