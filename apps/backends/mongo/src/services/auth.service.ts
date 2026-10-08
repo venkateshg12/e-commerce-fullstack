@@ -40,7 +40,7 @@ const REFRESH_REUSE_GRACE_MS = 30 * 1000;
 const dummyPasswordHash = hashValue(crypto.randomBytes(32).toString("hex"));
 
 const GENERIC_RESEND_MESSAGE =
-    "If that account exists and is not yet verified, a new verification link has been sent.";
+    "If that account exists and is not yet verified, a new verification link has been sent. Please check your spam folder too.";
 
 /**
  * Deletes the matching sessions and clears their cached "active" state, so an access token for one
@@ -145,7 +145,7 @@ export const loginUser = async ({ email, password, userAgent }: LoginInSchema) =
 
     if (!user.verified) {
         await issueEmailVerificationLink(user);
-        appAssert(false, UNAUTHORIZED, "you are not verified , please look into the email");
+        appAssert(false, UNAUTHORIZED, "Your email is not verified yet. We've sent you a new verification link, please check your inbox and spam folder.");
     }
 
     const { accessToken, refreshToken } = await createSessionAndTokens(user, userAgent);
@@ -236,7 +236,7 @@ export const verifyEmail = async (token: string, userAgent?: string) => {
 }
 
 export const sentResetPasswordEmail = async (email: string) => {
-    const genericMessage = "If an account with that email exists, a password reset link has been sent.";
+    const genericMessage = "If an account with that email exists, a password reset link has been sent. Please check your spam folder too.";
 
     // get the user by email
     const user = await UserModel.findOne({ email });
