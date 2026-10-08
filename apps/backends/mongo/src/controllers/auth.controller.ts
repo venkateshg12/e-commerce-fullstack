@@ -19,7 +19,7 @@ export const registerHandler = catchError(
         const { user } = await createAccount(request);
 
         // return response
-        return res.status(CREATED).json(ok({ title: "Account created Successfully", "message": "We've sent an account activation link to your email address. Please check your inbox to activate your account." }));
+        return res.status(CREATED).json(ok({ title: "Account created Successfully", "message": "We've sent an account activation link to your email address. Please check your inbox, and your spam folder too, to activate your account." }));
     }
 )
 

@@ -37,7 +37,7 @@ const ForgotPassword = () => {
           isOpen: true,
           type: "success",
           title: "Email Sent",
-          description: response?.data?.message || "Password reset link sent to your email.",
+          description: response?.data?.message || "Password reset link sent to your email. Please check your spam folder too.",
           onAction: () => {
             navigate("/login");
           },

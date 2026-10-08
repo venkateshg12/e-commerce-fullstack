@@ -84,3 +84,17 @@ export const RAZORPAY_KEY_SECRET = getEnv("RAZORPAY_KEY_SECRET");
   paying leaves a captured payment that never becomes an order.
  */
 export const RAZORPAY_WEBHOOK_SECRET = getEnv("RAZORPAY_WEBHOOK_SECRET", "");
+
+/*
+  Gmail API sender (see config/gmail.ts). All optional so the server still boots before the one-time
+  authorization has produced a refresh token: sendEmail fails with a clean error until they are set.
+  GMAIL_SENDER_NAME is the display name shown next to the fixed sender address.
+  GMAIL_OAUTH_SETUP exposes the authorization routes in production (they are always on elsewhere);
+  switch it on only for the moment you re-authorize, then off again.
+ */
+export const GMAIL_CLIENT_ID = getEnv("GMAIL_CLIENT_ID", "");
+export const GMAIL_CLIENT_SECRET = getEnv("GMAIL_CLIENT_SECRET", "");
+export const GMAIL_REDIRECT_URI = getEnv("GMAIL_REDIRECT_URI", "");
+export const GMAIL_REFRESH_TOKEN = getEnv("GMAIL_REFRESH_TOKEN", "");
+export const GMAIL_SENDER_NAME = getEnv("GMAIL_SENDER_NAME", "");
+export const GMAIL_OAUTH_SETUP = getEnv("GMAIL_OAUTH_SETUP", "false");

@@ -73,3 +73,24 @@ panel keeps its current look. The cursor rule is global (buttons, links, selects
   Checked in the browser: category pills, search button, product card link and image, login button all resolve to `pointer`.
 - Checked with a mock backend in headless Chromium at 1280px and 390px (no horizontal overflow after the pill-row width fix).
 - Not covered: Razorpay payment popup, order-success page, admin pages (deliberately untouched).
+
+# Gmail API sender (mongo backend)
+
+Sends from noreply.gvprojects@gmail.com via the Gmail API + a stored OAuth refresh token. Separate Google
+Cloud project ("GV Email Service") from Google sign-in (`GOOGLE_CLIENT_ID`). Scope: `gmail.send` only.
+
+- [x] `googleapis` added to `auth-service` (pnpm)
+- [x] `constants/env.ts` + `.env.example` — `GMAIL_*` (all optional so the server boots before the token exists)
+- [x] `config/gmail.ts` — single lazy OAuth2 client, scope, fixed sender address
+- [x] `services/gmail.service.ts` — `sendEmail`, MIME builder, Google error mapping, auth URL + code exchange
+- [x] `controllers/gmailAuth.controller.ts` + `routes/gmail.route.ts`, mounted at `/api/auth/gmail` in `index.ts`
+- [x] typecheck; stubbed-Google tests of service and routes (dev + production gating)
+- [ ] (you) one-time authorization → paste `GMAIL_REFRESH_TOKEN` → send a real test mail
+- [ ] (you, optional) point `utils/email/sendMail.ts` (Resend) at `sendEmail` so verification/reset mails go via Gmail
+
+## Review
+
+- Not exercised against real Google (no credentials here): token exchange and `messages.send` were tested with
+  `fetch` stubbed at the OAuth client's transporter. The MIME output parses with zero defects in Python's strict parser.
+- gaxios 7 uses `node-fetch`, not global `fetch`; stub via `client.transporter.defaults.fetchImplementation`.
+- `googleapis` costs ~0.45 s at require time and 241 MB on disk. `@googleapis/gmail` would be ~10x lighter if cold start matters.
